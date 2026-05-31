@@ -1,0 +1,85 @@
+"use client";
+
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { DEMO_PARSE, LAYER1_DEFAULTS, type Dealbreaker } from "./fixtures";
+
+export type CaptureValue = { rating: "up" | "down" | "skip"; note?: string };
+
+type AigentlessState = {
+  // Layer 1
+  location: string;
+  budget: number;
+  bedrooms: number;
+  moveIn: string;
+
+  // Dealbreaker
+  dealbreakerText: string;
+  parse: Dealbreaker[];
+
+  // Flow flags
+  budgetStretched: boolean;
+  showerVerified: boolean;
+
+  // Tour captures: { [unitId]: { [itemId]: CaptureValue } }
+  captures: Record<string, Record<string, CaptureValue>>;
+
+  // Actions
+  setLayer1: (p: Partial<{ location: string; budget: number; bedrooms: number; moveIn: string }>) => void;
+  setDealbreaker: (text: string) => void;
+  setParse: (parse: Dealbreaker[]) => void;
+  stretchBudget: () => void;
+  verifyShower: () => void;
+  capture: (unitId: string, itemId: string, value: CaptureValue) => void;
+  resetCaptures: (unitId: string) => void;
+  resetAll: () => void;
+};
+
+const initial = {
+  location: LAYER1_DEFAULTS.location,
+  budget: LAYER1_DEFAULTS.budget,
+  bedrooms: LAYER1_DEFAULTS.bedrooms,
+  moveIn: LAYER1_DEFAULTS.moveIn,
+  dealbreakerText: "",
+  parse: DEMO_PARSE,
+  budgetStretched: false,
+  showerVerified: false,
+  captures: {} as Record<string, Record<string, CaptureValue>>,
+};
+
+export const useStore = create<AigentlessState>()(
+  persist(
+    (set) => ({
+      ...initial,
+      setLayer1: (p) => set((s) => ({ ...s, ...p })),
+      setDealbreaker: (text) => set({ dealbreakerText: text }),
+      setParse: (parse) => set({ parse }),
+      stretchBudget: () => set({ budgetStretched: true, budget: 1900 }),
+      verifyShower: () =>
+        set((s) => ({
+          showerVerified: true,
+          parse: s.parse.map((d) =>
+            d.id === "shower" ? { ...d, status: "confirmed" as const } : d
+          ),
+        })),
+      capture: (unitId, itemId, value) =>
+        set((s) => ({
+          captures: {
+            ...s.captures,
+            [unitId]: { ...(s.captures[unitId] ?? {}), [itemId]: value },
+          },
+        })),
+      resetCaptures: (unitId) =>
+        set((s) => {
+          const next = { ...s.captures };
+          delete next[unitId];
+          return { captures: next };
+        }),
+      resetAll: () => set({ ...initial }),
+    }),
+    {
+      name: "aigentless-demo",
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);
