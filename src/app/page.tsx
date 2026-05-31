@@ -1,37 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { SearchModal } from "@/components/search-modal";
 import { ParseSheet } from "@/components/parse-sheet";
 import { useStore } from "@/lib/store";
-import { DEMO_INPUT, LAYER1_DEFAULTS } from "@/lib/fixtures";
+import { UNITS } from "@/lib/fixtures";
 
-const MOVE_IN_PRESETS = ["Now–2 wks", "2 wks–1 mo", "1–2 mo", "2+ mo", "Custom"];
-const MOVE_IN_RANGES: Record<string, string> = {
-  "Now–2 wks": "May 30 – Jun 13, 2026",
-  "2 wks–1 mo": "Jun 13 – Jun 30, 2026",
-  "1–2 mo": "Sep 1 – Oct 15, 2026",
-  "2+ mo": "Aug 1, 2026 onwards",
-  Custom: "Pick dates",
-};
-const BUDGETS = [1500, 1800, 2000, 2500, 3000];
-const BEDROOMS = ["Studio", "1", "2", "3", "4+"];
+// Discovery listings on the home view — units NOT in the demo result set
+// so the demo flow stays clean.
+const DISCOVERY_IDS = ["audley-studio", "post-chicago", "ascent-homes"];
 
-export default function IntakePage() {
-  const {
-    location,
-    budget,
-    bedrooms,
-    moveIn,
-    dealbreakerText,
-    setLayer1,
-    setDealbreaker,
-    resetAll,
-  } = useStore();
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [listening, setListening] = useState(false);
+export default function HomePage() {
+  const { location, resetAll } = useStore();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [parseOpen, setParseOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -41,208 +23,170 @@ export default function IntakePage() {
 
   if (!mounted) return null;
 
-  const startListening = () => {
-    if (listening) return;
-    setListening(true);
-    const text = DEMO_INPUT;
-    setDealbreaker("");
-    setTimeout(() => {
-      let i = 0;
-      const id = setInterval(() => {
-        i += 3;
-        setDealbreaker(text.slice(0, i));
-        if (i >= text.length) {
-          clearInterval(id);
-          setListening(false);
-        }
-      }, 35);
-    }, 1100);
-  };
-
-  const onSearch = () => {
-    if (dealbreakerText.trim().length > 0) {
-      setSheetOpen(true);
-    }
-  };
+  const discoveryUnits = DISCOVERY_IDS.map(
+    (id) => UNITS.find((u) => u.id === id)!
+  );
 
   return (
-    <main className="min-h-dvh px-5 pt-12 pb-8">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>aigentless</span>
-        <span className="opacity-50">prototype</span>
-      </div>
-
-      <h1 className="font-serif text-[40px] leading-[1.05] mt-6 tracking-tight">
-        Find your
-        <br />
-        next place.
-      </h1>
-
-      <div className="mt-10 space-y-7">
-        <Field label="Where">
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLayer1({ location: e.target.value })}
-            className="w-full bg-card border border-border rounded-2xl px-4 py-3.5 text-[16px] focus:outline-none focus:ring-2 focus:ring-ring/40"
-            placeholder="City"
-          />
-        </Field>
-
-        <Field label="Max rent">
-          <Segmented
-            value={String(budget)}
-            options={BUDGETS.map((b) => ({
-              value: String(b),
-              label: `$${b.toLocaleString()}`,
-            }))}
-            onChange={(v) => setLayer1({ budget: Number(v) })}
-            wrap
-          />
-        </Field>
-
-        <Field label="Bedrooms">
-          <Segmented
-            value={String(bedrooms)}
-            options={BEDROOMS.map((b) => ({
-              value: b === "Studio" ? "0" : b.replace("+", ""),
-              label: b,
-            }))}
-            onChange={(v) => setLayer1({ bedrooms: Number(v) })}
-          />
-        </Field>
-
-        <Field label="Move-in window">
-          <Segmented
-            value={moveIn}
-            options={MOVE_IN_PRESETS.map((p) => ({ value: p, label: p }))}
-            onChange={(v) => setLayer1({ moveIn: v })}
-            wrap
-          />
-          <p className="mt-2 text-xs text-muted-foreground pl-1">
-            → {MOVE_IN_RANGES[moveIn] ?? MOVE_IN_RANGES[LAYER1_DEFAULTS.moveIn]}
-          </p>
-        </Field>
-
-        <div className="h-px bg-border my-2" />
-
-        <div>
-          <h2 className="font-serif text-[22px] leading-tight">
-            Anything that would rule a place out?
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Optional, but we&rsquo;ll use it to protect your tour.
-          </p>
-
-          <div className="mt-4 relative">
-            <Textarea
-              value={dealbreakerText}
-              onChange={(e) => setDealbreaker(e.target.value)}
-              placeholder="e.g. dog has to be allowed, in-unit laundry, quiet"
-              rows={5}
-              className="bg-card text-[16px] leading-relaxed rounded-2xl pr-14 min-h-[140px]"
-              disabled={listening}
-            />
-            <button
-              type="button"
-              onClick={startListening}
-              aria-label="Capture voice"
-              className={`absolute bottom-3 right-3 w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
-                listening
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-foreground hover:bg-accent/60"
-              }`}
-            >
-              <span className={`relative ${listening ? "mic-pulse" : ""}`}>
-                <MicIcon />
-              </span>
-            </button>
-            {listening && (
-              <div className="absolute -bottom-6 right-3 text-xs text-muted-foreground">
-                Listening…
-              </div>
-            )}
-          </div>
+    <main className="min-h-dvh pb-24">
+      {/* Header */}
+      <div className="px-5 pt-12">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>aigentless</span>
+          <span className="opacity-50">prototype</span>
         </div>
 
-        <Button
-          onClick={onSearch}
-          disabled={dealbreakerText.trim().length === 0 || listening}
-          className="w-full h-14 text-base rounded-full mt-8"
+        <h1 className="font-serif text-[32px] leading-[1.05] mt-5 tracking-tight">
+          Find your next place
+        </h1>
+
+        {/* Search bar — full width, tap to open modal */}
+        <button
+          onClick={() => setModalOpen(true)}
+          className="mt-5 w-full flex items-center gap-3 bg-card border border-border rounded-full px-4 py-3.5 text-left hover:border-foreground/20 transition-colors"
         >
-          Search
-        </Button>
+          <SearchIcon />
+          <span className={`text-[15px] flex-1 ${location ? "text-foreground" : "text-muted-foreground"}`}>
+            {location || "Search city or neighborhood"}
+          </span>
+        </button>
+
+        {/* Compact filter + sort row */}
+        <div className="mt-3 flex items-center justify-between">
+          <button
+            onClick={() => setModalOpen(true)}
+            className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center"
+            aria-label="Filter"
+          >
+            <FilterIcon />
+          </button>
+          <button className="inline-flex items-center gap-1.5 text-sm text-foreground/80">
+            <SortIcon />
+            Sort by price
+          </button>
+        </div>
       </div>
 
+      <div className="h-px bg-border my-5 mx-5" />
+
+      {/* Discovery listings */}
+      <div className="px-5">
+        <div className="text-xs text-muted-foreground mb-3">
+          Recommended for you
+        </div>
+        <div className="space-y-4">
+          {discoveryUnits.map((u) => (
+            <ListingCard key={u.id} unit={u} />
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom nav — for fidelity */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none">
+        <div className="phone-frame !min-h-0 pointer-events-auto">
+          <div className="bg-background border-t border-border flex items-center justify-around py-2 pb-6">
+            <NavItem icon="🏠" label="Home" active />
+            <NavItem icon="🔍" label="Search" />
+            <NavItem icon="👤" label="Profile" />
+          </div>
+        </div>
+      </nav>
+
+      <SearchModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={() => {
+          setModalOpen(false);
+          setTimeout(() => setParseOpen(true), 220);
+        }}
+      />
       <ParseSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        open={parseOpen}
+        onClose={() => setParseOpen(false)}
         navigateOnConfirm
       />
     </main>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-foreground mb-2">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function Segmented({
-  value,
-  options,
-  onChange,
-  wrap = false,
+function ListingCard({
+  unit,
 }: {
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-  wrap?: boolean;
+  unit: (typeof UNITS)[number];
 }) {
   return (
-    <div className={`flex gap-2 ${wrap ? "flex-wrap" : ""}`}>
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={`px-4 py-2.5 rounded-full text-sm transition-all border ${
-              active
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-foreground border-border hover:border-foreground/30"
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+    <div className="block bg-card border border-border rounded-3xl overflow-hidden">
+      <div
+        className={`h-48 bg-gradient-to-br ${unit.imageBg} flex items-end justify-end p-4`}
+      >
+        <span className="text-7xl opacity-60 drop-shadow-sm">{unit.image}</span>
+      </div>
+      <div className="p-4">
+        <h3 className="font-serif text-[22px] leading-tight">{unit.name}</h3>
+        <p className="text-sm text-muted-foreground mt-0.5">{unit.address}</p>
+        <div className="flex items-center gap-4 text-sm text-foreground/80 mt-3">
+          <span>🛏 {unit.beds === 0 ? "Studio" : unit.beds}</span>
+          <span>🛁 {unit.baths}</span>
+          <span>⬚ {unit.sqft} ft²</span>
+          <span className="ml-auto font-medium">
+            ${unit.rent.toLocaleString()}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
 
-function MicIcon() {
+function NavItem({
+  icon,
+  label,
+  active = false,
+}: {
+  icon: string;
+  label: string;
+  active?: boolean;
+}) {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <button
+      className={`flex flex-col items-center gap-0.5 px-4 py-1 ${
+        active ? "text-foreground" : "text-muted-foreground"
+      }`}
     >
-      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="22" />
+      <span className="text-lg">{icon}</span>
+      <span className="text-[10px] font-medium">{label}</span>
+    </button>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="6" x2="14" y2="6" />
+      <line x1="18" y1="6" x2="20" y2="6" />
+      <circle cx="16" cy="6" r="2" />
+      <line x1="4" y1="12" x2="6" y2="12" />
+      <line x1="10" y1="12" x2="20" y2="12" />
+      <circle cx="8" cy="12" r="2" />
+      <line x1="4" y1="18" x2="14" y2="18" />
+      <line x1="18" y1="18" x2="20" y2="18" />
+      <circle cx="16" cy="18" r="2" />
+    </svg>
+  );
+}
+
+function SortIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
     </svg>
   );
 }

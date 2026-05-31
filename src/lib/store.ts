@@ -11,6 +11,7 @@ type AigentlessState = {
   location: string;
   budget: number;
   bedrooms: number;
+  bathrooms: number;
   moveIn: string;
 
   // Dealbreaker
@@ -25,7 +26,7 @@ type AigentlessState = {
   captures: Record<string, Record<string, CaptureValue>>;
 
   // Actions
-  setLayer1: (p: Partial<{ location: string; budget: number; bedrooms: number; moveIn: string }>) => void;
+  setLayer1: (p: Partial<{ location: string; budget: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
   setDealbreaker: (text: string) => void;
   setParse: (parse: Dealbreaker[]) => void;
   stretchBudget: () => void;
@@ -39,6 +40,7 @@ const initial = {
   location: LAYER1_DEFAULTS.location,
   budget: LAYER1_DEFAULTS.budget,
   bedrooms: LAYER1_DEFAULTS.bedrooms,
+  bathrooms: 1,
   moveIn: LAYER1_DEFAULTS.moveIn,
   dealbreakerText: "",
   parse: DEMO_PARSE,

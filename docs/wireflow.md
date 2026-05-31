@@ -39,62 +39,82 @@ Result: **0 match at $1,800. 3 match at $1,900. Unit #1 has missing data → rou
 
 ---
 
-## Screen 1 — Intake (one scroll)
+## Screen 1 — Home (listings-first)
+
+The renter lands on listings, not on a form. The search bar is the primary affordance; everything else is secondary.
 
 ```
 ┌─────────────────────────────────┐
-│  12:47                    62 ▼  │
+│  aigentless          prototype  │  ← small header
 │                                 │
 │  Find your next place           │  ← serif H1
 │                                 │
-│  📍 Where                       │
-│  [ Chicago                  ▾ ] │
+│  [🔍 Search city or area     ]  │  ← FULL-WIDTH search bar, tap → modal
 │                                 │
-│  💰 Max rent                    │
-│  [ $1,800/mo                ▾ ] │
-│                                 │
-│  🛏 Bedrooms                    │
-│  ( Studio )( 1 )( 2 )( 3 )(4+) │  ← 1 selected
-│                                 │
-│  📅 Move-in window              │
-│  ( Now–2 wks )( 2 wks–1 mo )    │  ← segmented presets, multi-row
-│  ( 1–2 mo )( 2+ mo )( Custom )  │
-│  → Sep 1 – Oct 15, 2026         │  ← live computed range, caption
-│                                 │
+│  [⊕]              Sort by ↑↓    │  ← compact: filter icon + sort
 │  ─────────────────────────────  │
 │                                 │
-│  Anything that would rule       │  ← serif H2, same weight as Layer 1
-│  a place out?                   │
-│  Optional, but we'll use it to  │  ← caption
-│  protect your tour.             │
+│  Recommended for you            │  ← small caps
+│  [unit card]                    │
+│  [unit card]                    │
+│  [unit card]                    │
 │                                 │
-│  ┌───────────────────────────┐ │
-│  │ Quiet enough to study,    │ │  ← textarea, 4 lines
-│  │ good light, dog allowed,  │ │
-│  │ OCD so in-unit laundry,   │ │
-│  │ walk-in shower please.    │ │
-│  │                      🎤   │ │  ← mic, bottom-right
-│  └───────────────────────────┘ │
-│                                 │
-│  [        Search 8 units    ]   │  ← live count, primary navy
+│  ── Home ── Search ── Profile ──│  ← bottom nav
 └─────────────────────────────────┘
 ```
 
-**Why this shape:** the dealbreaker textarea is given equal visual weight to Layer 1 — that *is* the IA bet. Caption explains why it matters without making it feel scary.
+**Hierarchy rule:** search is primary, filter & sort are secondary on the same row. The previous big "Filter" button beside the search bar competed visually with search itself — moving it down disambiguates which action matters first.
 
-**Move-in window:** segmented presets cover ~95% of intent without making the renter pick a specific date they're not sure about. "Custom" opens a date-range picker for the rest. Live caption shows the computed range so the user knows what got committed.
+**Tap search bar → opens Search Modal (Screen 1b).**
 
-**Audio capture:** mic in bottom-right of the textarea. Tap → "Listening..." pulse → after 3 sec, text appears typed into the field. For prototype: hardcoded transcript (deterministic for demo). If Web Speech API works reliably on the test phone, swap in real speech-to-text — but don't depend on it; the demo can't fail because of a network/permission hiccup.
+---
+
+## Screen 1b — Search Modal (fullscreen accordion)
+
+Five sections, only one expanded at a time. Everything fits in viewport — the dealbreaker textarea is *never* below the fold.
+
+```
+┌─────────────────────────────────┐
+│  [×]         Search             │  ← header
+├─────────────────────────────────┤
+│  ┌───────────────────────────┐ │
+│  │ Where                     │ │  ← EXPANDED
+│  │ [search input]            │ │
+│  │ (Chicago) (NYC) (Austin)  │ │  ← suggestion chips
+│  └───────────────────────────┘ │
+│                                 │
+│  Move-in        Sep 1 – Oct 15  │  ← collapsed pill
+│  Beds & baths   1 bd · 1 ba     │  ← collapsed pill
+│  Budget         $1,800          │  ← collapsed pill
+│  Dealbreakers   Optional        │  ← collapsed pill
+│                                 │
+│  ┌───────────────────────────┐ │
+│  │  🔍 Search                │ │  ← sticky bottom CTA
+│  └───────────────────────────┘ │
+└─────────────────────────────────┘
+```
+
+**Why accordion:** the constraint is "everything visible without scrolling." Five sections × full UI would overflow. Collapsed pills show the label + the chosen value, so the renter sees at a glance what's set without expanding each one. Tap any pill → it expands, the previous one collapses.
+
+**Auto-advance:** picking a value in the current section (tapping a suggested city, a move-in preset, a budget chip, a bath count) auto-collapses the current and expands the next. Reduces taps and creates a felt sense of progress. The exception is Dealbreakers — no auto-advance because it's free-text; user taps Search when done.
+
+**Dealbreaker placement:** intentionally the LAST step. It's the most expensive cognitive task (open-text), and putting it last means it lands when the other commitments are made — the renter has psychological momentum. Mic + 3-row textarea fit in the expanded card without pushing the Search button below the fold.
+
+**Why this beats the original one-scroll form:**
+- The previous form crammed 5 inputs vertically with the dealbreaker pushed to the bottom of the scroll — many users would search without ever typing it
+- Now the dealbreaker is *unavoidable* — it's the last step gating the Search button
+- Visible-in-viewport constraint forces discipline; no field becomes "the one you skip"
 
 **Copy locked:**
-- H1: `Find your next place`
-- Move-in label: `Move-in window`
-- Move-in presets: `Now–2 wks` / `2 wks–1 mo` / `1–2 mo` / `2+ mo` / `Custom`
-- H2: `Anything that would rule a place out?`
-- Caption: `Optional, but we'll use it to protect your tour.`
-- Placeholder (greyed when empty): `e.g. dog has to be allowed, in-unit laundry, quiet`
-- Mic affordance: subtle pulse on idle, "Listening..." label on tap
-- Button: `Search` (no count yet on first load) → `Search 3 units` (after they type, fake live count = 3)
+- H1 (home): `Find your next place`
+- Search bar placeholder: `Search city or neighborhood`
+- Modal header: `Search`
+- Section labels: `Where` / `Move-in` / `Beds & baths` / `Budget` / `Dealbreakers`
+- Dealbreaker collapsed placeholder: `Optional — protect your tour`
+- Dealbreaker expanded placeholder: `e.g. dog has to be allowed, in-unit laundry, quiet`
+- CTA: `Search`
+
+**Audio capture:** mic bottom-right of textarea. Tap → "Listening..." pulse → 3 sec → hardcoded transcript types in. Same as before.
 
 ---
 
