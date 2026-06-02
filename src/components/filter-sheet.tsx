@@ -66,11 +66,15 @@ export function FilterSheet({
       <div className="flex-1 overflow-y-auto px-5 pb-5">
         {/* Nice-to-haves */}
         <section className="mt-2">
-          <h3 className="font-serif text-[20px] leading-tight mb-3">
+          <h3 className="font-serif text-[20px] leading-tight mb-2">
             Nice-to-haves
           </h3>
-          {niceToHaves.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
+          <p className="text-xs text-muted-foreground italic">
+            Pick what would make a place better — they&rsquo;ll boost ranking
+            but won&rsquo;t rule places out.
+          </p>
+          {niceToHaves.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
               {niceToHaves.map((label) => (
                 <button
                   key={label}
@@ -82,11 +86,6 @@ export function FilterSheet({
                 </button>
               ))}
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic">
-              Pick what would make a place better — they&rsquo;ll boost
-              ranking but won&rsquo;t rule places out.
-            </p>
           )}
         </section>
 
