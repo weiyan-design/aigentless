@@ -12,9 +12,6 @@ import {
   Bed,
   Bath,
   Square,
-  Home as HomeIcon,
-  Search,
-  User,
   Sparkles,
   Wind,
   Wrench,
@@ -34,7 +31,7 @@ import {
   Package,
   Wifi,
   Map as MapIcon,
-  Eye,
+  Info,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -292,7 +289,6 @@ export default function UnitDetailPage({
               </Button>
             </div>
           </div>
-          <BottomNav />
         </div>
       </div>
 
@@ -640,11 +636,44 @@ function ConfirmedChip({
 }
 
 function InPersonChip({ label, Icon }: { label: string; Icon?: LucideIcon }) {
+  const [tipOpen, setTipOpen] = useState(false);
+
+  useEffect(() => {
+    if (!tipOpen) return;
+    const t = setTimeout(() => setTipOpen(false), 2200);
+    const onAway = () => setTipOpen(false);
+    window.addEventListener("touchstart", onAway, { passive: true, once: true });
+    window.addEventListener("mousedown", onAway, { once: true });
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("touchstart", onAway);
+      window.removeEventListener("mousedown", onAway);
+    };
+  }, [tipOpen]);
+
   return (
-    <span className="shrink-0 inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-3 py-1.5 text-[13px]">
-      <Eye size={12} strokeWidth={2} />
-      {Icon && <Icon size={13} strokeWidth={1.75} />}
-      <span>{label}</span>
+    <span className="relative shrink-0">
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setTipOpen((v) => !v);
+        }}
+        className="inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-3 py-1.5 text-[13px] hover:bg-accent/60 transition-colors"
+        aria-label={`${label} — check in person`}
+      >
+        {Icon && <Icon size={13} strokeWidth={1.75} />}
+        <span>{label}</span>
+        <Info size={12} strokeWidth={2} />
+      </button>
+      {tipOpen && (
+        <span
+          role="tooltip"
+          className="absolute left-1/2 -translate-x-1/2 -top-9 z-10 whitespace-nowrap bg-foreground text-background text-xs px-2.5 py-1.5 rounded-md shadow-md pointer-events-none"
+        >
+          Check it in person
+          <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-foreground" />
+        </span>
+      )}
     </span>
   );
 }
@@ -695,36 +724,3 @@ function FloorPlanIllustration() {
   );
 }
 
-function BottomNav() {
-  const router = useRouter();
-  return (
-    <nav className="bg-background border-t border-border flex items-center justify-around py-2 pb-6">
-      <NavItem Icon={HomeIcon} label="Home" onClick={() => router.push("/")} />
-      <NavItem Icon={Search} label="Search" active />
-      <NavItem Icon={User} label="Profile" />
-    </nav>
-  );
-}
-function NavItem({
-  Icon,
-  label,
-  active = false,
-  onClick,
-}: {
-  Icon: LucideIcon;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-4 py-1.5 ${
-        active ? "text-foreground" : "text-muted-foreground"
-      }`}
-    >
-      <Icon size={20} strokeWidth={active ? 2 : 1.5} />
-      <span className="text-[10px] font-medium">{label}</span>
-    </button>
-  );
-}
