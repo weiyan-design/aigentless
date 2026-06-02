@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoveInPicker } from "@/components/move-in-picker";
+import { PriceRangeSlider } from "@/components/price-range-slider";
 import { useStore } from "@/lib/store";
 import { DEMO_INPUT } from "@/lib/fixtures";
 
@@ -52,7 +53,6 @@ const CITY_DB = [
 ];
 const BED_OPTIONS = ["Studio", "1", "2", "3", "4+"];
 const BATH_OPTIONS = ["1", "1.5", "2", "3", "4+"];
-const BUDGET_OPTIONS = [1500, 1800, 2000, 2500, 3000];
 
 type Props = {
   open: boolean;
@@ -64,6 +64,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
   const {
     location,
     budget,
+    budgetMin,
     bedrooms,
     bathrooms,
     moveIn,
@@ -121,7 +122,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
     where: location || "Add location",
     when: moveIn || "Add date",
     beds: `${bedrooms === 0 ? "Studio" : `${bedrooms} bd`} · ${bathrooms} ba`,
-    budget: `$${budget.toLocaleString()}`,
+    budget: `$${budgetMin.toLocaleString()} – $${budget.toLocaleString()}`,
     deal: dealbreakerText
       ? dealbreakerText.slice(0, 32) + (dealbreakerText.length > 32 ? "…" : "")
       : "Optional — protect your tour",
@@ -178,13 +179,12 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
                 />
               )}
               {s.id === "budget" && (
-                <ChipsContent
-                  options={BUDGET_OPTIONS.map((b) => `$${b.toLocaleString()}`)}
-                  value={`$${budget.toLocaleString()}`}
-                  onChange={(v) => {
-                    setLayer1({ budget: Number(v.replace(/[$,]/g, "")) });
-                    setTimeout(() => advance("budget"), 180);
-                  }}
+                <PriceRangeSlider
+                  min={budgetMin}
+                  max={budget}
+                  onChange={({ min, max }) =>
+                    setLayer1({ budgetMin: min, budget: max })
+                  }
                 />
               )}
               {s.id === "deal" && (
@@ -322,33 +322,6 @@ function PinIcon() {
   );
 }
 
-function ChipsContent({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((o) => (
-        <button
-          key={o}
-          onClick={() => onChange(o)}
-          className={`text-[13px] px-3 py-1.5 rounded-full border ${
-            o === value
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-card border-border hover:border-foreground/30"
-          }`}
-        >
-          {o}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function BedsContent({
   beds,

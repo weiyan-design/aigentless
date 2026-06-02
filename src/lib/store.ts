@@ -9,7 +9,8 @@ export type CaptureValue = { rating: "up" | "down" | "skip"; note?: string };
 type AigentlessState = {
   // Layer 1
   location: string;
-  budget: number;
+  budget: number;       // max (kept for compat with existing demo logic)
+  budgetMin: number;    // min of price range
   bedrooms: number;
   bathrooms: number;
   moveIn: string;
@@ -26,7 +27,7 @@ type AigentlessState = {
   captures: Record<string, Record<string, CaptureValue>>;
 
   // Actions
-  setLayer1: (p: Partial<{ location: string; budget: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
+  setLayer1: (p: Partial<{ location: string; budget: number; budgetMin: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
   setDealbreaker: (text: string) => void;
   setParse: (parse: Dealbreaker[]) => void;
   stretchBudget: () => void;
@@ -39,6 +40,7 @@ type AigentlessState = {
 const initial = {
   location: LAYER1_DEFAULTS.location,
   budget: LAYER1_DEFAULTS.budget,
+  budgetMin: 1000,
   bedrooms: LAYER1_DEFAULTS.bedrooms,
   bathrooms: 1,
   moveIn: LAYER1_DEFAULTS.moveIn,
