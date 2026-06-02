@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SearchModal } from "@/components/search-modal";
-import { ParseSheet } from "@/components/parse-sheet";
 import { useStore } from "@/lib/store";
 import { UNITS } from "@/lib/fixtures";
 
@@ -11,9 +11,9 @@ import { UNITS } from "@/lib/fixtures";
 const DISCOVERY_IDS = ["audley-studio", "post-chicago", "ascent-homes"];
 
 export default function HomePage() {
+  const router = useRouter();
   const { location, resetAll } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
-  const [parseOpen, setParseOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -97,13 +97,8 @@ export default function HomePage() {
         onClose={() => setModalOpen(false)}
         onSubmit={() => {
           setModalOpen(false);
-          setTimeout(() => setParseOpen(true), 220);
+          router.push("/results");
         }}
-      />
-      <ParseSheet
-        open={parseOpen}
-        onClose={() => setParseOpen(false)}
-        navigateOnConfirm
       />
     </main>
   );

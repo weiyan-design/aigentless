@@ -118,9 +118,18 @@ Five sections, only one expanded at a time. Everything fits in viewport — the 
 
 ---
 
-## Screen 2 — Parse confirmation (bottom sheet over intake)
+## ~~Screen 2 — Parse confirmation~~ (removed)
 
-Appears as bottom sheet when Search is tapped. Half-height, drag to dismiss.
+**Status: removed 2026-06-02.** The parse confirmation sheet has been cut. The parse interpretation is no longer shown as an explicit "here's what I heard" beat between the search modal and the results.
+
+The three-group breakdown (Checked out / Verify before tour / Check in person) now surfaces in-context: the must-haves summary strip on Screen 4 shows confirmed chips + the "👁 light, quiet · check in person" line. Edit on that strip reopens the Search modal so the renter can refine the dealbreaker.
+
+**Trade-off accepted:** the explicit moment of "the system understood me" is lost, but the flow is shorter and the must-haves strip + Screen 5 unit detail + Screen 6 checklist together still carry the IA bet.
+
+Original Screen 2 spec retained below for reference if we ever reinstate.
+
+<details>
+<summary>Original Screen 2 spec</summary>
 
 ```
 ┌─────────────────────────────────┐
@@ -162,6 +171,8 @@ Appears as bottom sheet when Search is tapped. Half-height, drag to dismiss.
 - Secondary: `Edit`
 
 **Color logic (resolved):** each group gets its own accent — green tick (confirmed), tan/amber (pending verification), accent color (in-person). Carries through to the chips on Screen 4 and the groupings on Screen 6, so the renter learns the visual language once.
+
+</details>
 
 ---
 

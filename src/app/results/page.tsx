@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ParseSheet } from "@/components/parse-sheet";
+import { SearchModal } from "@/components/search-modal";
 import { useStore } from "@/lib/store";
 import {
   STRETCHED_RESULT_IDS,
@@ -121,7 +121,11 @@ export default function ResultsPage() {
         <ResultsList />
       )}
 
-      <ParseSheet open={editing} onClose={() => setEditing(false)} />
+      <SearchModal
+        open={editing}
+        onClose={() => setEditing(false)}
+        onSubmit={() => setEditing(false)}
+      />
     </main>
   );
 }
