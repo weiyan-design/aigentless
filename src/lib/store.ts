@@ -20,7 +20,6 @@ type AigentlessState = {
   parse: Dealbreaker[];
 
   // Flow flags
-  budgetStretched: boolean;
   showerVerified: boolean;
 
   // Tour captures: { [unitId]: { [itemId]: CaptureValue } }
@@ -30,7 +29,6 @@ type AigentlessState = {
   setLayer1: (p: Partial<{ location: string; budget: number; budgetMin: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
   setDealbreaker: (text: string) => void;
   setParse: (parse: Dealbreaker[]) => void;
-  stretchBudget: () => void;
   verifyShower: () => void;
   capture: (unitId: string, itemId: string, value: CaptureValue) => void;
   resetCaptures: (unitId: string) => void;
@@ -46,7 +44,6 @@ const initial = {
   moveIn: LAYER1_DEFAULTS.moveIn,
   dealbreakerText: "",
   parse: DEMO_PARSE,
-  budgetStretched: false,
   showerVerified: false,
   captures: {} as Record<string, Record<string, CaptureValue>>,
 };
@@ -58,7 +55,6 @@ export const useStore = create<AigentlessState>()(
       setLayer1: (p) => set((s) => ({ ...s, ...p })),
       setDealbreaker: (text) => set({ dealbreakerText: text }),
       setParse: (parse) => set({ parse }),
-      stretchBudget: () => set({ budgetStretched: true, budget: 1900 }),
       verifyShower: () =>
         set((s) => ({
           showerVerified: true,

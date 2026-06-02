@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Check, Eye, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore, type CaptureValue } from "@/lib/store";
 import { getUnit, MAPLE_HILL_CHECKLIST, DEMO_CAPTURE_FALLBACK } from "@/lib/fixtures";
@@ -100,13 +101,13 @@ export default function TourPage({
       {handled.length > 0 && (
         <section className="px-5 mt-7">
           <div className="smallcaps text-success-foreground inline-flex items-center gap-1.5 bg-success/30 px-2.5 py-1 rounded-full mb-3">
-            <span>✓</span>
+            <Check size={12} strokeWidth={2.25} />
             <span>Handled before your tour</span>
           </div>
           {handled.map((item) => (
             <div key={item.id} className="flex items-start gap-3 py-2">
-              <span className="w-6 h-6 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center text-xs">
-                ✓
+              <span className="w-6 h-6 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
+                <Check size={12} strokeWidth={2.25} />
               </span>
               <div>
                 <div className="text-[15px] font-medium">{item.label}</div>
@@ -124,7 +125,7 @@ export default function TourPage({
       {/* Your list */}
       <section className="px-5 mt-7">
         <div className="smallcaps text-accent-foreground inline-flex items-center gap-1.5 bg-accent/60 px-2.5 py-1 rounded-full mb-3">
-          <span>👁</span>
+          <Eye size={12} strokeWidth={2} />
           <span>On your list to check</span>
         </div>
         <div className="space-y-2">
@@ -211,8 +212,18 @@ function ChecklistRow({
     return (
       <div className="bg-card border border-border rounded-2xl px-4 py-3 sheet-backdrop-enter">
         <div className="flex items-center gap-2">
-          <span className="text-lg">
-            {value.rating === "up" ? "👍" : "👎"}
+          <span
+            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              value.rating === "up"
+                ? "bg-success/40 text-success-foreground"
+                : "bg-warn/50 text-warn-foreground"
+            }`}
+          >
+            {value.rating === "up" ? (
+              <ThumbsUp size={13} strokeWidth={1.75} />
+            ) : (
+              <ThumbsDown size={13} strokeWidth={1.75} />
+            )}
           </span>
           <span className="text-[15px] flex-1">{label}</span>
         </div>
@@ -233,17 +244,17 @@ function ChecklistRow({
       <div className="flex items-center gap-2 mt-3">
         <button
           onClick={() => onCapture({ rating: "up", note: note || undefined })}
-          className="w-12 h-10 rounded-full bg-success/30 text-success-foreground flex items-center justify-center text-lg hover:bg-success/50 active:scale-95 transition-all"
+          className="w-12 h-10 rounded-full bg-success/30 text-success-foreground flex items-center justify-center hover:bg-success/50 active:scale-95 transition-all"
           aria-label="Thumbs up"
         >
-          👍
+          <ThumbsUp size={18} strokeWidth={1.75} />
         </button>
         <button
           onClick={() => onCapture({ rating: "down", note: note || undefined })}
-          className="w-12 h-10 rounded-full bg-warn/40 text-warn-foreground flex items-center justify-center text-lg hover:bg-warn/60 active:scale-95 transition-all"
+          className="w-12 h-10 rounded-full bg-warn/40 text-warn-foreground flex items-center justify-center hover:bg-warn/60 active:scale-95 transition-all"
           aria-label="Thumbs down"
         >
-          👎
+          <ThumbsDown size={18} strokeWidth={1.75} />
         </button>
         <button
           onClick={() => onCapture({ rating: "skip" })}
@@ -253,9 +264,9 @@ function ChecklistRow({
         </button>
         <button
           onClick={() => setNoteOpen((v) => !v)}
-          className="ml-auto text-xs text-foreground/70 underline underline-offset-2"
+          className="ml-auto text-xs text-foreground/70 underline underline-offset-2 inline-flex items-center gap-0.5"
         >
-          + note
+          <Plus size={11} strokeWidth={2} /> note
         </button>
       </div>
       {noteOpen && (
@@ -272,10 +283,5 @@ function ChecklistRow({
 }
 
 function BackIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
-  );
+  return <ArrowLeft size={18} strokeWidth={1.75} />;
 }

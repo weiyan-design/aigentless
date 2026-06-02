@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import confetti from "canvas-confetti";
+import { ArrowLeft, ThumbsUp, ThumbsDown, Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { getUnit, MAPLE_HILL_CHECKLIST } from "@/lib/fixtures";
@@ -169,14 +170,14 @@ function CaptureRow({
   note?: string;
   accent?: boolean;
 }) {
-  const icon =
+  const Icon =
     rating === "up"
-      ? "👍"
+      ? ThumbsUp
       : rating === "down"
-      ? "👎"
+      ? ThumbsDown
       : rating === "confirmed"
-      ? "✓"
-      : "—";
+      ? Check
+      : Minus;
 
   return (
     <div
@@ -185,7 +186,7 @@ function CaptureRow({
       } rounded-2xl px-4 py-3`}
     >
       <span
-        className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-sm ${
+        className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center ${
           rating === "up" || rating === "confirmed"
             ? "bg-success/40 text-success-foreground"
             : rating === "down"
@@ -193,7 +194,7 @@ function CaptureRow({
             : "bg-secondary text-muted-foreground"
         }`}
       >
-        {icon}
+        <Icon size={14} strokeWidth={rating === "confirmed" ? 2.25 : 1.75} />
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-[15px] font-medium">{label}</div>
@@ -217,10 +218,5 @@ function formatTime() {
 }
 
 function BackIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
-  );
+  return <ArrowLeft size={18} strokeWidth={1.75} />;
 }

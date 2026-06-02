@@ -3,10 +3,13 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Check, Info, Mail, ShowerHead, Bed, Bath, Square } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmailSheet } from "@/components/email-sheet";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/toast";
+import { DEALBREAKER_ICONS } from "@/lib/icons";
 import { getUnit } from "@/lib/fixtures";
 
 export default function UnitDetailPage({
@@ -52,7 +55,7 @@ export default function UnitDetailPage({
           className="w-11 h-11 rounded-full bg-card border border-border flex items-center justify-center"
           aria-label="Back"
         >
-          <BackIcon />
+          <ArrowLeft size={18} strokeWidth={1.75} />
         </button>
       </div>
 
@@ -69,10 +72,20 @@ export default function UnitDetailPage({
         <p className="text-sm text-muted-foreground mt-1">
           {unit.address} · {unit.city}
         </p>
-        <p className="text-[15px] text-foreground/80 mt-2">
-          <span className="font-medium">${unit.rent.toLocaleString()}/mo</span> ·{" "}
-          {unit.beds === 0 ? "Studio" : `${unit.beds} bd`} · {unit.baths} ba ·{" "}
-          {unit.sqft} ft²
+        <p className="text-[15px] text-foreground/80 mt-2 inline-flex items-center gap-3 flex-wrap">
+          <span className="font-medium">${unit.rent.toLocaleString()}/mo</span>
+          <span className="inline-flex items-center gap-1">
+            <Bed size={14} strokeWidth={1.75} />
+            {unit.beds === 0 ? "Studio" : `${unit.beds} bd`}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Bath size={14} strokeWidth={1.75} />
+            {unit.baths} ba
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Square size={14} strokeWidth={1.75} />
+            {unit.sqft} ft²
+          </span>
         </p>
       </div>
 
@@ -85,18 +98,21 @@ export default function UnitDetailPage({
         <div className="space-y-3">
           {parse
             .filter((d) => d.id === "pet" || d.id === "laundry")
-            .map((d) => (
-              <MustHaveRow
-                key={d.id}
-                icon={d.icon}
-                label={d.label}
-                status="confirmed"
-              />
-            ))}
+            .map((d) => {
+              const Icon = DEALBREAKER_ICONS[d.id];
+              return (
+                <MustHaveRow
+                  key={d.id}
+                  Icon={Icon}
+                  label={d.label}
+                  status="confirmed"
+                />
+              );
+            })}
 
           {/* Walk-in shower row */}
           <MustHaveRow
-            icon="🚿"
+            Icon={ShowerHead}
             label="Walk-in shower"
             status={showerStatus}
             onVerifyClick={() => setEmailOpen(true)}
@@ -149,12 +165,12 @@ export default function UnitDetailPage({
 }
 
 function MustHaveRow({
-  icon,
+  Icon,
   label,
   status,
   onVerifyClick,
 }: {
-  icon: string;
+  Icon?: LucideIcon;
   label: string;
   status: "confirmed" | "unknown" | "verified";
   onVerifyClick?: () => void;
@@ -162,12 +178,12 @@ function MustHaveRow({
   if (status === "confirmed") {
     return (
       <div className="flex items-start gap-3">
-        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center text-sm">
-          ✓
+        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
+          <Check size={14} strokeWidth={2} />
         </span>
         <div className="flex-1">
-          <div className="flex items-center gap-1.5">
-            <span>{icon}</span>
+          <div className="flex items-center gap-2">
+            {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
             <span className="text-[15px] font-medium">{label}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -181,12 +197,12 @@ function MustHaveRow({
   if (status === "verified") {
     return (
       <div className="flex items-start gap-3 sheet-backdrop-enter">
-        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center text-sm">
-          ✓
+        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
+          <Check size={14} strokeWidth={2} />
         </span>
         <div className="flex-1">
-          <div className="flex items-center gap-1.5">
-            <span>{icon}</span>
+          <div className="flex items-center gap-2">
+            {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
             <span className="text-[15px] font-medium">{label}</span>
           </div>
           <p className="text-xs text-success-foreground mt-0.5">
@@ -199,12 +215,12 @@ function MustHaveRow({
 
   return (
     <div className="flex items-start gap-3 bg-warn/30 border border-warn rounded-2xl p-3">
-      <span className="w-7 h-7 shrink-0 rounded-full bg-warn text-warn-foreground flex items-center justify-center text-sm">
-        ⓘ
+      <span className="w-7 h-7 shrink-0 rounded-full bg-warn text-warn-foreground flex items-center justify-center">
+        <Info size={14} strokeWidth={2} />
       </span>
       <div className="flex-1">
-        <div className="flex items-center gap-1.5">
-          <span>{icon}</span>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
           <span className="text-[15px] font-medium">{label}</span>
         </div>
         <p className="text-xs text-warn-foreground mt-0.5">
@@ -214,18 +230,10 @@ function MustHaveRow({
           onClick={onVerifyClick}
           className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium bg-card border border-border rounded-full px-3 py-1.5 hover:bg-secondary transition-colors"
         >
-          ✉ Email agent to confirm
+          <Mail size={14} strokeWidth={1.75} />
+          Email agent to confirm
         </button>
       </div>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
   );
 }

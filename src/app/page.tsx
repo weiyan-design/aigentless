@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Home as HomeIcon,
+  Search,
+  User,
+  Bed,
+  Bath,
+  Square,
+  ArrowUpDown,
+} from "lucide-react";
 import { SearchModal } from "@/components/search-modal";
 import { SortSheet, SORT_LABELS, type SortOption } from "@/components/sort-sheet";
 import { useStore } from "@/lib/store";
@@ -44,7 +53,7 @@ export default function HomePage() {
           onClick={() => setModalOpen(true)}
           className="mt-6 w-full flex items-center justify-center gap-2 bg-card border border-border rounded-full px-5 py-4 hover:border-foreground/20 transition-colors"
         >
-          <SearchIcon />
+          <Search size={18} strokeWidth={1.75} className="text-muted-foreground" />
           <span className="text-[16px] text-muted-foreground">
             Find your next place
           </span>
@@ -61,7 +70,7 @@ export default function HomePage() {
             onClick={() => setSortOpen(true)}
             className="inline-flex items-center gap-1.5 text-xs text-foreground/80 px-2.5 py-1 rounded-full hover:bg-secondary"
           >
-            <SortIcon />
+            <ArrowUpDown size={14} strokeWidth={1.75} />
             {SORT_LABELS[sort]}
           </button>
         </div>
@@ -76,9 +85,9 @@ export default function HomePage() {
       <nav className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none">
         <div className="phone-frame !min-h-0 pointer-events-auto">
           <div className="bg-background border-t border-border flex items-center justify-around py-2 pb-6">
-            <NavItem icon="🏠" label="Home" active />
-            <NavItem icon="🔍" label="Search" onClick={() => setModalOpen(true)} />
-            <NavItem icon="👤" label="Profile" />
+            <NavItem Icon={HomeIcon} label="Home" active />
+            <NavItem Icon={Search} label="Search" onClick={() => setModalOpen(true)} />
+            <NavItem Icon={User} label="Profile" />
           </div>
         </div>
       </nav>
@@ -126,9 +135,18 @@ function ListingCard({ unit }: { unit: Unit }) {
         <p className="text-sm text-muted-foreground">{unit.address}</p>
         {/* Row 3 — specs */}
         <div className="flex items-center gap-4 text-sm text-foreground/80 pt-0.5">
-          <span>🛏 {unit.beds === 0 ? "Studio" : unit.beds}</span>
-          <span>🛁 {unit.baths}</span>
-          <span>⬚ {unit.sqft.toLocaleString()} ft²</span>
+          <span className="inline-flex items-center gap-1">
+            <Bed size={14} strokeWidth={1.75} />
+            {unit.beds === 0 ? "Studio" : unit.beds}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Bath size={14} strokeWidth={1.75} />
+            {unit.baths}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Square size={14} strokeWidth={1.75} />
+            {unit.sqft.toLocaleString()} ft²
+          </span>
         </div>
       </div>
     </div>
@@ -136,12 +154,12 @@ function ListingCard({ unit }: { unit: Unit }) {
 }
 
 function NavItem({
-  icon,
+  Icon,
   label,
   active = false,
   onClick,
 }: {
-  icon: string;
+  Icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
   label: string;
   active?: boolean;
   onClick?: () => void;
@@ -149,29 +167,12 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-4 py-1 ${
+      className={`flex flex-col items-center gap-0.5 px-4 py-1.5 ${
         active ? "text-foreground" : "text-muted-foreground"
       }`}
     >
-      <span className="text-lg">{icon}</span>
+      <Icon size={20} strokeWidth={active ? 2 : 1.5} />
       <span className="text-[10px] font-medium">{label}</span>
     </button>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function SortIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
-    </svg>
   );
 }

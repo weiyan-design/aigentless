@@ -3,19 +3,34 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Search,
+  ArrowUpDown,
+  SearchX,
+  Check,
+  Info,
+  Eye,
+  Bed,
+  Bath,
+  Square,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchModal } from "@/components/search-modal";
 import { useStore } from "@/lib/store";
+import { DEALBREAKER_ICONS } from "@/lib/icons";
 import {
   STRETCHED_RESULT_IDS,
-  STRETCHED_BUDGET,
   STRETCH_AMOUNT,
   getUnit,
+  type Unit,
 } from "@/lib/fixtures";
+
+const REQUIRED_BUDGET_FOR_RESULTS = 1900;
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { location, budget, budgetStretched, parse, stretchBudget } = useStore();
+  const { location, budget, parse, setLayer1 } = useStore();
   const [mounted, setMounted] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -27,6 +42,12 @@ export default function ResultsPage() {
   );
   const inperson = parse.filter((d) => d.status === "inperson");
 
+  // Budget-driven results: take the demo result set, filter by rent ≤ budget
+  const matchingUnits: Unit[] = STRETCHED_RESULT_IDS.map(
+    (id) => getUnit(id)!
+  ).filter((u) => u.rent <= budget);
+  const hasResults = matchingUnits.length > 0;
+
   return (
     <main className="min-h-dvh pb-8">
       {/* Header */}
@@ -37,36 +58,32 @@ export default function ResultsPage() {
             className="w-11 h-11 rounded-full bg-card border border-border flex items-center justify-center"
             aria-label="Back"
           >
-            <BackIcon />
+            <ArrowLeft size={18} strokeWidth={1.75} />
           </button>
-          <div className="flex-1 bg-card border border-border rounded-full px-4 py-2.5 text-sm text-foreground">
-            🔍 <span className="ml-1.5">{location}</span>
+          <div className="flex-1 bg-card border border-border rounded-full px-4 py-2.5 text-sm text-foreground flex items-center gap-2">
+            <Search size={16} strokeWidth={1.75} className="text-muted-foreground" />
+            <span>{location}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-foreground">
-            {budgetStretched ? (
-              <>
-                <span className="font-medium">3 floorplans</span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  · ${budget.toLocaleString()} max
-                </span>
-              </>
-            ) : (
-              <span className="font-medium">0 floorplans</span>
-            )}
+            <span className="font-medium">
+              {matchingUnits.length} floorplan{matchingUnits.length === 1 ? "" : "s"}
+            </span>
+            <span className="text-muted-foreground">
+              {" "}· ${budget.toLocaleString()} max
+            </span>
           </div>
-          <button className="text-sm text-foreground/70 inline-flex items-center gap-1">
-            <SortIcon />
+          <button className="text-sm text-foreground/70 inline-flex items-center gap-1.5">
+            <ArrowUpDown size={14} strokeWidth={1.75} />
             Sort by price
           </button>
         </div>
       </div>
 
-      {/* Must-haves strip — only in results state */}
-      {budgetStretched && (
+      {/* Must-haves strip — only when there are results */}
+      {hasResults && (
         <div className="px-5 mt-4">
           <div className="bg-card border border-border rounded-2xl px-4 py-3">
             <div className="flex items-center justify-between mb-1.5">
@@ -79,19 +96,22 @@ export default function ResultsPage() {
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {confirmedAndVerify.map((d) => (
-                <span
-                  key={d.id}
-                  className="inline-flex items-center gap-1 text-xs bg-success/30 text-success-foreground px-2 py-1 rounded-full"
-                >
-                  <span>{d.icon}</span>
-                  <span>{d.label}</span>
-                </span>
-              ))}
+              {confirmedAndVerify.map((d) => {
+                const Icon = DEALBREAKER_ICONS[d.id];
+                return (
+                  <span
+                    key={d.id}
+                    className="inline-flex items-center gap-1.5 text-xs bg-success/30 text-success-foreground px-2 py-1 rounded-full"
+                  >
+                    {Icon && <Icon size={12} strokeWidth={1.75} />}
+                    <span>{d.label}</span>
+                  </span>
+                );
+              })}
             </div>
             {inperson.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1.5 items-center">
-                <span className="text-xs text-muted-foreground">👁</span>
+                <Eye size={12} strokeWidth={1.75} className="text-muted-foreground" />
                 {inperson.map((d, i) => (
                   <span key={d.id} className="text-xs text-muted-foreground">
                     {d.label}
@@ -110,15 +130,14 @@ export default function ResultsPage() {
       <div className="h-px bg-border my-5 mx-5" />
 
       {/* States */}
-      {!budgetStretched ? (
+      {!hasResults ? (
         <ZeroResults
           budget={budget}
-          onStretch={() => {
-            stretchBudget();
-          }}
+          onStretch={() => setLayer1({ budget: REQUIRED_BUDGET_FOR_RESULTS })}
+          onEditSearch={() => setEditing(true)}
         />
       ) : (
-        <ResultsList />
+        <ResultsList units={matchingUnits} />
       )}
 
       <SearchModal
@@ -133,15 +152,19 @@ export default function ResultsPage() {
 function ZeroResults({
   budget,
   onStretch,
+  onEditSearch,
 }: {
   budget: number;
   onStretch: () => void;
+  onEditSearch: () => void;
 }) {
+  const gap = Math.max(0, REQUIRED_BUDGET_FOR_RESULTS - budget);
+  const stretchAmount = gap > 0 ? gap : STRETCH_AMOUNT;
   return (
     <div className="px-5">
       <div className="flex flex-col items-center text-center mt-10">
-        <div className="w-28 h-28 rounded-full bg-secondary flex items-center justify-center text-5xl">
-          📖
+        <div className="w-28 h-28 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
+          <SearchX size={44} strokeWidth={1.5} />
         </div>
         <h2 className="font-serif text-[26px] leading-tight mt-6 max-w-xs">
           Nothing matches in your budget — yet
@@ -151,14 +174,14 @@ function ZeroResults({
       <div className="mt-8 bg-card border border-border rounded-3xl p-5 shadow-sm">
         <p className="text-[15px] leading-relaxed">
           Stretch your budget by{" "}
-          <span className="font-medium">${STRETCH_AMOUNT}/mo</span> and{" "}
+          <span className="font-medium">${stretchAmount}/mo</span> and{" "}
           <span className="font-medium">3 places</span> match all your must-haves.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
-          <Chip tone="success">✓ Pet-friendly</Chip>
-          <Chip tone="success">✓ In-unit laundry</Chip>
-          <Chip tone="success">✓ Walk-in shower</Chip>
+          <SuccessChip>Pet-friendly</SuccessChip>
+          <SuccessChip>In-unit laundry</SuccessChip>
+          <SuccessChip>Walk-in shower</SuccessChip>
         </div>
 
         <div className="mt-3 text-xs text-muted-foreground italic">
@@ -169,12 +192,15 @@ function ZeroResults({
           onClick={onStretch}
           className="w-full h-12 text-base rounded-full mt-5"
         >
-          See 3 units at ${STRETCHED_BUDGET.toLocaleString()}
+          See 3 units at ${REQUIRED_BUDGET_FOR_RESULTS.toLocaleString()}
         </Button>
       </div>
 
       <div className="text-center mt-5">
-        <button className="text-sm text-foreground/70 underline underline-offset-2">
+        <button
+          onClick={onEditSearch}
+          className="text-sm text-foreground/70 underline underline-offset-2"
+        >
           Or edit your search
         </button>
       </div>
@@ -186,86 +212,73 @@ function ZeroResults({
   );
 }
 
-function ResultsList() {
+function ResultsList({ units }: { units: Unit[] }) {
   return (
     <div className="px-5 space-y-4">
-      {STRETCHED_RESULT_IDS.map((id) => {
-        const u = getUnit(id);
-        if (!u) return null;
-        return (
-          <Link
-            key={u.id}
-            href={`/units/${u.id}`}
-            className="block bg-card border border-border rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
+      {units.map((u) => (
+        <Link
+          key={u.id}
+          href={`/units/${u.id}`}
+          className="block bg-card border border-border rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
+        >
+          <div
+            className={`h-52 bg-gradient-to-br ${u.imageBg} flex items-end justify-end p-4`}
           >
-            <div
-              className={`h-52 bg-gradient-to-br ${u.imageBg} flex items-end justify-end p-4`}
-            >
-              <span className="text-7xl opacity-60 drop-shadow-sm">
-                {u.image}
+            <span className="text-7xl opacity-60 drop-shadow-sm">
+              {u.image}
+            </span>
+          </div>
+          <div className="p-4">
+            <h3 className="font-serif text-[22px] leading-tight">{u.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {u.address}
+            </p>
+            <div className="flex items-center gap-4 text-sm text-foreground/80 mt-3">
+              <span className="inline-flex items-center gap-1">
+                <Bed size={14} strokeWidth={1.75} />
+                {u.beds === 0 ? "Studio" : u.beds}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Bath size={14} strokeWidth={1.75} />
+                {u.baths}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Square size={14} strokeWidth={1.75} />
+                {u.sqft.toLocaleString()} ft²
+              </span>
+              <span className="ml-auto font-medium">
+                ${u.rent.toLocaleString()}
               </span>
             </div>
-            <div className="p-4">
-              <h3 className="font-serif text-[22px] leading-tight">{u.name}</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {u.address}
-              </p>
-              <div className="flex items-center gap-4 text-sm text-foreground/80 mt-3">
-                <span>🛏 {u.beds === 0 ? "Studio" : u.beds}</span>
-                <span>🛁 {u.baths}</span>
-                <span>⬚ {u.sqft} ft²</span>
-                <span className="ml-auto font-medium">
-                  ${u.rent.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                <Chip tone="success">✓ Pet</Chip>
-                <Chip tone="success">✓ Laundry</Chip>
-                {u.matched.shower === true && <Chip tone="success">✓ Shower</Chip>}
-                {u.matched.shower === null && (
-                  <Chip tone="warn">ⓘ 1 to verify</Chip>
-                )}
-              </div>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              <SuccessChip>Pet</SuccessChip>
+              <SuccessChip>Laundry</SuccessChip>
+              {u.matched.shower === true && <SuccessChip>Shower</SuccessChip>}
+              {u.matched.shower === null && (
+                <WarnChip>1 to verify</WarnChip>
+              )}
             </div>
-          </Link>
-        );
-      })}
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
 
-function Chip({
-  children,
-  tone,
-}: {
-  children: React.ReactNode;
-  tone: "success" | "warn" | "neutral";
-}) {
-  const tones = {
-    success: "bg-success/30 text-success-foreground",
-    warn: "bg-warn/50 text-warn-foreground",
-    neutral: "bg-secondary text-foreground",
-  };
+function SuccessChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${tones[tone]}`}>
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-success/30 text-success-foreground">
+      <Check size={12} strokeWidth={2} />
       {children}
     </span>
   );
 }
 
-function BackIcon() {
+function WarnChip({ children }: { children: React.ReactNode }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
-  );
-}
-
-function SortIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
-    </svg>
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-warn/50 text-warn-foreground">
+      <Info size={12} strokeWidth={2} />
+      {children}
+    </span>
   );
 }
