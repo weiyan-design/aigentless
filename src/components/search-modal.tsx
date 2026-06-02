@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MoveInPicker } from "@/components/move-in-picker";
 import { useStore } from "@/lib/store";
 import { DEMO_INPUT } from "@/lib/fixtures";
 
@@ -17,8 +18,7 @@ const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "deal", label: "Dealbreakers" },
 ];
 
-const CITY_SUGGESTIONS = ["Chicago", "New York, NY", "Austin, TX", "Brooklyn, NY", "Seattle, WA"];
-const MOVE_IN_PRESETS = ["Now–2 wks", "2 wks–1 mo", "1–2 mo", "2+ mo", "Custom"];
+const CITY_SUGGESTIONS = ["Austin, TX", "Chicago", "New York, NY", "Brooklyn, NY", "Seattle, WA"];
 const BED_OPTIONS = ["Studio", "1", "2", "3", "4+"];
 const BATH_OPTIONS = ["1", "1.5", "2", "3", "4+"];
 const BUDGET_OPTIONS = [1500, 1800, 2000, 2500, 3000];
@@ -88,7 +88,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
 
   const summary: Record<SectionId, string> = {
     where: location || "Add location",
-    when: moveIn,
+    when: moveIn || "Add date",
     beds: `${bedrooms === 0 ? "Studio" : `${bedrooms} bd`} · ${bathrooms} ba`,
     budget: `$${budget.toLocaleString()}`,
     deal: dealbreakerText
@@ -132,13 +132,9 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
                 />
               )}
               {s.id === "when" && (
-                <ChipsContent
-                  options={MOVE_IN_PRESETS}
+                <MoveInPicker
                   value={moveIn}
-                  onChange={(v) => {
-                    setLayer1({ moveIn: v });
-                    setTimeout(() => advance("when"), 180);
-                  }}
+                  onChange={(v) => setLayer1({ moveIn: v })}
                 />
               )}
               {s.id === "beds" && (

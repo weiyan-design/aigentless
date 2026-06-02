@@ -184,8 +184,8 @@ export const LAYER1_DEFAULTS = {
   location: "Chicago",
   budget: 1800,
   bedrooms: 1,
-  moveIn: "1–2 mo",
-  moveInRange: "Sep 1 – Oct 15, 2026",
+  moveIn: "",
+  moveInRange: "",
 };
 
 export const STRETCHED_BUDGET = 1900;
