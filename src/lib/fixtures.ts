@@ -190,3 +190,34 @@ export const LAYER1_DEFAULTS = {
 
 export const STRETCHED_BUDGET = 1900;
 export const STRETCH_AMOUNT = 100;
+
+// Filter sheet — unit features & community amenities
+export const UNIT_FEATURES = [
+  "In-unit laundry",
+  "Dishwasher",
+  "Hardwood floors",
+  "Air conditioning",
+  "Stainless steel appliances",
+  "Walk-in closet",
+  "Private balcony",
+  "Furnished",
+  "Floor-to-ceiling windows",
+  "Walk-in shower",
+  "Quartz countertops",
+  "Kitchen island",
+];
+
+export const COMMUNITY_AMENITIES = [
+  "Pool",
+  "Fitness center",
+  "Doorman",
+  "Elevator",
+  "Bike storage",
+  "Rooftop deck",
+  "Package room",
+  "Co-working space",
+  "Lounge",
+  "Pet spa",
+  "Dog run",
+  "EV charging",
+];

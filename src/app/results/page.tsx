@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Search,
   ArrowUpDown,
   SearchX,
   Check,
@@ -14,9 +13,11 @@ import {
   Bed,
   Bath,
   Square,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchModal } from "@/components/search-modal";
+import { FilterSheet } from "@/components/filter-sheet";
 import { useStore } from "@/lib/store";
 import { DEALBREAKER_ICONS } from "@/lib/icons";
 import {
@@ -30,9 +31,11 @@ const REQUIRED_BUDGET_FOR_RESULTS = 1900;
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { location, budget, parse, setLayer1 } = useStore();
+  const { location, budget, bedrooms, bathrooms, moveIn, parse, setLayer1 } =
+    useStore();
   const [mounted, setMounted] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
@@ -52,18 +55,35 @@ export default function ResultsPage() {
     <main className="min-h-dvh pb-8">
       {/* Header */}
       <div className="px-5 pt-12">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => router.push("/")}
-            className="w-11 h-11 rounded-full bg-card border border-border flex items-center justify-center"
+            className="w-11 h-11 flex items-center justify-center"
             aria-label="Back"
           >
-            <ArrowLeft size={18} strokeWidth={1.75} />
+            <ArrowLeft size={20} strokeWidth={1.75} />
           </button>
-          <div className="flex-1 bg-card border border-border rounded-full px-4 py-2.5 text-sm text-foreground flex items-center gap-2">
-            <Search size={16} strokeWidth={1.75} className="text-muted-foreground" />
-            <span>{location}</span>
+          <div className="flex-1 bg-card border border-border rounded-2xl px-4 py-2.5 text-center">
+            <div className="text-[15px] font-medium leading-tight">
+              Home in {location || "—"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+              {[
+                moveIn ? shortDate(moveIn) : null,
+                `${bedrooms === 0 ? "Studio" : `${bedrooms} bed`}`,
+                `${bathrooms} bath`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
           </div>
+          <button
+            onClick={() => setFilterOpen(true)}
+            className="w-11 h-11 flex items-center justify-center"
+            aria-label="Filter"
+          >
+            <SlidersHorizontal size={20} strokeWidth={1.75} />
+          </button>
         </div>
 
         <div className="flex items-center justify-between mt-4">
@@ -145,9 +165,38 @@ export default function ResultsPage() {
         onClose={() => setEditing(false)}
         onSubmit={() => setEditing(false)}
       />
+      <FilterSheet
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        matchingCount={matchingUnits.length}
+        onEditMustHaves={() => setEditing(true)}
+      />
     </main>
   );
 }
+
+// Take a moveIn display string from store ("Jun 15, 2026" or "Aug 2026")
+// and condense to "6/15" or "Aug" for the header pill.
+function shortDate(s: string): string {
+  // "Jun 15, 2026" → "6/15"
+  const dayMatch = s.match(/^([A-Z][a-z]{2}) (\d{1,2}),/);
+  if (dayMatch) {
+    const m = MONTHS_SHORT.indexOf(dayMatch[1]) + 1;
+    return `${m}/${dayMatch[2]}`;
+  }
+  // "Jun 15–Jul 1, 2026" → "6/15–7/1"
+  const rangeMatch = s.match(/^([A-Z][a-z]{2}) (\d{1,2})[–-](\d{1,2}),/);
+  if (rangeMatch) {
+    const m = MONTHS_SHORT.indexOf(rangeMatch[1]) + 1;
+    return `${m}/${rangeMatch[2]}–${rangeMatch[3]}`;
+  }
+  // Otherwise just return as-is (e.g. "Aug 2026", "Within 1 month")
+  return s;
+}
+
+const MONTHS_SHORT = [
+  "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+];
 
 function ZeroResults({
   budget,
