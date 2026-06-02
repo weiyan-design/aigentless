@@ -271,18 +271,29 @@ function ResultsList({ units }: { units: Unit[] }) {
           className="block bg-card border border-border rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
         >
           <div
-            className={`h-52 bg-gradient-to-br ${u.imageBg} flex items-end justify-end p-4`}
+            className={`h-48 bg-gradient-to-br ${u.imageBg} flex items-end justify-end p-4`}
           >
             <span className="text-7xl opacity-60 drop-shadow-sm">
               {u.image}
             </span>
           </div>
-          <div className="p-4">
-            <h3 className="font-serif text-[22px] leading-tight">{u.name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {u.address}
-            </p>
-            <div className="flex items-center gap-4 text-sm text-foreground/80 mt-3">
+          <div className="px-4 py-4 space-y-1.5">
+            {/* Row 1 — price range + available date */}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-serif text-[22px] leading-tight">
+                ${u.rent.toLocaleString()}–${u.rentMax.toLocaleString()}
+                <span className="text-sm text-muted-foreground font-sans font-normal">
+                  /mo
+                </span>
+              </span>
+              <span className="text-[15px] font-medium text-foreground/80 whitespace-nowrap">
+                Available {u.availableDate}
+              </span>
+            </div>
+            {/* Row 2 — address */}
+            <p className="text-sm text-muted-foreground">{u.address}</p>
+            {/* Row 3 — specs */}
+            <div className="flex items-center gap-4 text-sm text-foreground/80 pt-0.5">
               <span className="inline-flex items-center gap-1">
                 <Bed size={14} strokeWidth={1.75} />
                 {u.beds === 0 ? "Studio" : u.beds}
@@ -295,11 +306,9 @@ function ResultsList({ units }: { units: Unit[] }) {
                 <Square size={14} strokeWidth={1.75} />
                 {u.sqft.toLocaleString()} ft²
               </span>
-              <span className="ml-auto font-medium">
-                ${u.rent.toLocaleString()}
-              </span>
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
+            {/* Row 4 — must-have chips */}
+            <div className="flex flex-wrap gap-1.5 pt-2">
               <SuccessChip>Pet</SuccessChip>
               <SuccessChip>Laundry</SuccessChip>
               {u.matched.shower === true && <SuccessChip>Shower</SuccessChip>}
