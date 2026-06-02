@@ -18,7 +18,38 @@ const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "deal", label: "Dealbreakers" },
 ];
 
-const CITY_SUGGESTIONS = ["Austin, TX", "Chicago", "New York, NY", "Brooklyn, NY", "Seattle, WA"];
+// Typeahead source for the Where input
+const CITY_DB = [
+  "Austin, TX",
+  "Boston, MA",
+  "Brooklyn, NY",
+  "Charlotte, NC",
+  "Chicago, IL",
+  "Dallas, TX",
+  "Denver, CO",
+  "Detroit, MI",
+  "Houston, TX",
+  "Los Angeles, CA",
+  "Miami, FL",
+  "Minneapolis, MN",
+  "Nashville, TN",
+  "New Orleans, LA",
+  "New York, NY",
+  "Newark, NJ",
+  "Oakland, CA",
+  "Orlando, FL",
+  "Philadelphia, PA",
+  "Phoenix, AZ",
+  "Pittsburgh, PA",
+  "Portland, OR",
+  "Queens, NY",
+  "Sacramento, CA",
+  "San Antonio, TX",
+  "San Diego, CA",
+  "San Francisco, CA",
+  "Seattle, WA",
+  "Washington, DC",
+];
 const BED_OPTIONS = ["Studio", "1", "2", "3", "4+"];
 const BATH_OPTIONS = ["1", "1.5", "2", "3", "4+"];
 const BUDGET_OPTIONS = [1500, 1800, 2000, 2500, 3000];
@@ -239,6 +270,15 @@ function WhereContent({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const query = value.trim().toLowerCase();
+  const matches =
+    query.length > 0
+      ? CITY_DB.filter((c) => c.toLowerCase().includes(query))
+          .filter((c) => c.toLowerCase() !== value.toLowerCase())
+          .slice(0, 4)
+      : [];
+
   return (
     <div>
       <input
@@ -249,25 +289,36 @@ function WhereContent({
         placeholder="City or neighborhood"
         className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-ring/40"
       />
-      <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {CITY_SUGGESTIONS.map((c) => (
-          <button
-            key={c}
-            onClick={() => {
-              onChange(c);
-              setTimeout(onConfirm, 180);
-            }}
-            className={`text-xs px-2.5 py-1.5 rounded-full border ${
-              c === value
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border hover:border-foreground/30"
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
+      {matches.length > 0 && (
+        <ul className="mt-2 -mx-1">
+          {matches.map((c) => (
+            <li key={c}>
+              <button
+                onClick={() => {
+                  onChange(c);
+                  setTimeout(onConfirm, 180);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary text-left"
+              >
+                <span className="w-7 h-7 flex items-center justify-center rounded-md bg-secondary text-foreground/70">
+                  <PinIcon />
+                </span>
+                <span className="text-[14px]">{c}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
   );
 }
 
