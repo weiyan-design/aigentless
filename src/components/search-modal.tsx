@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Mic, MapPin } from "lucide-react";
+import { X, Search, Mic, MapPin, Check, Info, Eye } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoveInPicker } from "@/components/move-in-picker";
 import { PriceRangeSlider } from "@/components/price-range-slider";
 import { useStore } from "@/lib/store";
-import { DEMO_INPUT } from "@/lib/fixtures";
+import { DEALBREAKER_ICONS } from "@/lib/icons";
+import { DEMO_INPUT, type Dealbreaker } from "@/lib/fixtures";
 
 type SectionId = "where" | "when" | "beds" | "budget" | "deal";
 
@@ -70,6 +72,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
     bathrooms,
     moveIn,
     dealbreakerText,
+    parse,
     setLayer1,
     setDealbreaker,
   } = useStore();
@@ -221,6 +224,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
                   onChange={setDealbreaker}
                   listening={listening}
                   onMic={startListening}
+                  parse={parse}
                 />
               )}
             </SectionCard>
@@ -426,42 +430,91 @@ function DealContent({
   onChange,
   listening,
   onMic,
+  parse,
 }: {
   value: string;
   onChange: (v: string) => void;
   listening: boolean;
   onMic: () => void;
+  parse: Dealbreaker[];
 }) {
+  const showParse = value.trim().length > 0 && !listening;
+
   return (
-    <div className="relative">
-      <Textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g. dog has to be allowed, in-unit laundry, quiet"
-        rows={3}
-        disabled={listening}
-        className="bg-background text-[15px] leading-relaxed rounded-xl pr-14 resize-none min-h-[88px]"
-      />
-      <button
-        type="button"
-        onClick={onMic}
-        aria-label="Capture voice"
-        className={`absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-          listening
-            ? "bg-primary text-primary-foreground"
-            : "bg-secondary text-foreground hover:bg-accent/60"
-        }`}
-      >
-        <span className={`relative ${listening ? "mic-pulse" : ""}`}>
-          <Mic size={18} strokeWidth={1.75} />
-        </span>
-      </button>
-      {listening && (
-        <div className="absolute -bottom-5 right-3 text-xs text-muted-foreground">
-          Listening…
+    <div>
+      {/* Parsed chips appear above the text field once transcription finishes */}
+      {showParse && (
+        <div className="mb-3 sheet-backdrop-enter">
+          <p className="text-xs text-muted-foreground mb-1.5">
+            Got it — {parse.length} must-have{parse.length === 1 ? "" : "s"}:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {parse.map((d) => (
+              <ParseChip key={d.id} d={d} Icon={DEALBREAKER_ICONS[d.id]} />
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Text field + mic */}
+      <div className="relative">
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="e.g. dog has to be allowed, in-unit laundry, quiet"
+          rows={3}
+          disabled={listening}
+          className="bg-background text-[15px] leading-relaxed rounded-xl pr-14 resize-none min-h-[88px]"
+        />
+        <button
+          type="button"
+          onClick={onMic}
+          aria-label="Capture voice"
+          className={`absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            listening
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary text-foreground hover:bg-accent/60"
+          }`}
+        >
+          <span className={`relative ${listening ? "mic-pulse" : ""}`}>
+            <Mic size={18} strokeWidth={1.75} />
+          </span>
+        </button>
+        {listening && (
+          <div className="absolute -bottom-5 right-3 text-xs text-muted-foreground">
+            Listening…
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function ParseChip({ d, Icon }: { d: Dealbreaker; Icon?: LucideIcon }) {
+  if (d.status === "confirmed") {
+    return (
+      <span className="inline-flex items-center gap-1.5 bg-success/30 text-success-foreground rounded-full px-2.5 py-1 text-xs">
+        <Check size={11} strokeWidth={2.25} />
+        {Icon && <Icon size={11} strokeWidth={1.75} />}
+        {d.label}
+      </span>
+    );
+  }
+  if (d.status === "verify") {
+    return (
+      <span className="inline-flex items-center gap-1.5 bg-warn/50 text-warn-foreground rounded-full px-2.5 py-1 text-xs">
+        <Info size={11} strokeWidth={2.25} />
+        {Icon && <Icon size={11} strokeWidth={1.75} />}
+        {d.label}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-2.5 py-1 text-xs">
+      <Eye size={11} strokeWidth={2.25} />
+      {Icon && <Icon size={11} strokeWidth={1.75} />}
+      {d.label}
+    </span>
   );
 }
 
