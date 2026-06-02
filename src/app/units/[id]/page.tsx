@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -590,6 +591,10 @@ function FeesContent() {
 
 // ─── MUST-HAVE CHIPS ─────────────────────────────────────────────────
 
+// All three chips share the same h-9 height and consistent inner padding.
+const CHIP_BASE =
+  "shrink-0 inline-flex items-center gap-1.5 h-9 rounded-full text-[13px] whitespace-nowrap";
+
 function VerifyChip({
   label,
   Icon,
@@ -602,7 +607,7 @@ function VerifyChip({
   return (
     <button
       onClick={onClick}
-      className="shrink-0 inline-flex items-center gap-2 bg-warn/40 border border-warn text-warn-foreground rounded-full pl-3 pr-1 py-1.5 text-[13px] hover:bg-warn/60 transition-colors"
+      className={`${CHIP_BASE} bg-warn/40 border border-warn text-warn-foreground pl-3 pr-1 hover:bg-warn/60 transition-colors`}
     >
       {Icon && <Icon size={13} strokeWidth={1.75} />}
       <span className="font-medium">{label}</span>
@@ -624,7 +629,7 @@ function ConfirmedChip({
 }) {
   return (
     <span
-      className={`shrink-0 inline-flex items-center gap-1.5 bg-success/30 text-success-foreground rounded-full px-3 py-1.5 text-[13px] ${
+      className={`${CHIP_BASE} bg-success/30 text-success-foreground px-3 ${
         resolvedNow ? "sheet-backdrop-enter" : ""
       }`}
     >
@@ -636,45 +641,66 @@ function ConfirmedChip({
 }
 
 function InPersonChip({ label, Icon }: { label: string; Icon?: LucideIcon }) {
-  const [tipOpen, setTipOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
 
+  // Auto-dismiss + tap-away
   useEffect(() => {
-    if (!tipOpen) return;
-    const t = setTimeout(() => setTipOpen(false), 2200);
-    const onAway = () => setTipOpen(false);
-    window.addEventListener("touchstart", onAway, { passive: true, once: true });
-    window.addEventListener("mousedown", onAway, { once: true });
+    if (!tipPos) return;
+    const t = window.setTimeout(() => setTipPos(null), 2500);
+    const close = () => setTipPos(null);
+    // Defer adding listeners by a tick so the opening tap doesn't immediately close it
+    const armId = window.setTimeout(() => {
+      window.addEventListener("touchstart", close, { passive: true });
+      window.addEventListener("mousedown", close);
+      window.addEventListener("scroll", close, { passive: true, capture: true });
+    }, 0);
     return () => {
-      clearTimeout(t);
-      window.removeEventListener("touchstart", onAway);
-      window.removeEventListener("mousedown", onAway);
+      window.clearTimeout(t);
+      window.clearTimeout(armId);
+      window.removeEventListener("touchstart", close);
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", close, true);
     };
-  }, [tipOpen]);
+  }, [tipPos]);
+
+  const onTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!btnRef.current) return;
+    if (tipPos) {
+      setTipPos(null);
+      return;
+    }
+    const rect = btnRef.current.getBoundingClientRect();
+    setTipPos({ x: rect.left + rect.width / 2, y: rect.top });
+  };
 
   return (
-    <span className="relative shrink-0">
+    <>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setTipOpen((v) => !v);
-        }}
-        className="inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-3 py-1.5 text-[13px] hover:bg-accent/60 transition-colors"
+        ref={btnRef}
+        onClick={onTap}
+        className={`${CHIP_BASE} bg-accent/40 text-accent-foreground px-3 hover:bg-accent/60 transition-colors`}
         aria-label={`${label} — check in person`}
       >
         {Icon && <Icon size={13} strokeWidth={1.75} />}
         <span>{label}</span>
         <Info size={12} strokeWidth={2} />
       </button>
-      {tipOpen && (
-        <span
-          role="tooltip"
-          className="absolute left-1/2 -translate-x-1/2 -top-9 z-10 whitespace-nowrap bg-foreground text-background text-xs px-2.5 py-1.5 rounded-md shadow-md pointer-events-none"
-        >
-          Check it in person
-          <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-foreground" />
-        </span>
-      )}
-    </span>
+      {tipPos &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="fixed z-[60] -translate-x-1/2 -translate-y-full whitespace-nowrap bg-foreground text-background text-xs px-2.5 py-1.5 rounded-md shadow-md pointer-events-none sheet-backdrop-enter"
+            style={{ left: tipPos.x, top: tipPos.y - 6 }}
+          >
+            Check it in person
+            <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45 bg-foreground" />
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
