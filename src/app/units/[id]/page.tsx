@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, use, useRef } from "react";
+import { useState, useEffect, use, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   Share2,
   Check,
-  Info,
   Mail,
   ShowerHead,
   Bed,
@@ -22,7 +21,6 @@ import {
   ChefHat,
   WashingMachine,
   Square as SquareIcon,
-  ChevronDown,
   Bike,
   Briefcase,
   TreePine,
@@ -36,17 +34,16 @@ import {
   Package,
   Wifi,
   Map as MapIcon,
+  Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmailSheet } from "@/components/email-sheet";
-import { useStore } from "@/lib/store";
+import { useStore, type CaptureValue } from "@/lib/store";
 import { useToast } from "@/components/toast";
 import { DEALBREAKER_ICONS } from "@/lib/icons";
-import { getUnit } from "@/lib/fixtures";
+import { getUnit, type Dealbreaker } from "@/lib/fixtures";
 
-// Unsplash interior images — using stable photo IDs with crop params.
-// Plain <img> tags avoid the next.config.ts remotePatterns dance for a prototype.
 const CAROUSEL_IMAGES = [
   "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=700&fit=crop",
   "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=700&fit=crop",
@@ -57,16 +54,16 @@ const CAROUSEL_IMAGES = [
 const COMMUNITY_IMAGE =
   "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&h=500&fit=crop";
 const NEIGHBORHOOD_MAP =
-  "https://maps.googleapis.com/maps/api/staticmap?center=Chicago&zoom=14&size=600x400&style=feature:all%7Celement:labels%7Cvisibility:off";
+  "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&h=500&fit=crop";
 
-const TABS = [
-  "Summary",
-  "Unit Overview",
-  "Building Details",
-  "Neighborhood",
-  "Fees",
+const SECTIONS = [
+  { id: "summary", label: "Summary" },
+  { id: "overview", label: "Unit Overview" },
+  { id: "building", label: "Building Details" },
+  { id: "neighborhood", label: "Neighborhood" },
+  { id: "fees", label: "Fees" },
 ] as const;
-type Tab = (typeof TABS)[number];
+type SectionId = (typeof SECTIONS)[number]["id"];
 
 const UNIT_FEATURES: { Icon: LucideIcon; label: string }[] = [
   { Icon: Wind, label: "Central A/C" },
@@ -103,11 +100,46 @@ export default function UnitDetailPage({
   const { showerVerified, verifyShower, parse } = useStore();
   const showToast = useToast((s) => s.show);
   const [emailOpen, setEmailOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("Summary");
+  const [active, setActive] = useState<SectionId>("summary");
   const [mounted, setMounted] = useState(false);
-  const tabRef = useRef<HTMLDivElement>(null);
+  const programmaticScroll = useRef(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Scroll-spy: pick the section whose top is nearest the tab bar
+  useEffect(() => {
+    if (!mounted) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (programmaticScroll.current) return;
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          const id = visible[0].target.id as SectionId;
+          if (SECTIONS.some((s) => s.id === id)) setActive(id);
+        }
+      },
+      // Active = section whose top has crossed below the sticky tab bar (~60px)
+      // and is still above 60% of viewport
+      { rootMargin: "-70px 0px -55% 0px", threshold: 0 }
+    );
+    SECTIONS.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [mounted]);
+
+  const scrollToSection = useCallback((sec: SectionId) => {
+    setActive(sec);
+    programmaticScroll.current = true;
+    const el = document.getElementById(sec);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      programmaticScroll.current = false;
+    }, 700);
+  }, []);
 
   if (!unit) return notFound();
   if (!mounted) return null;
@@ -126,11 +158,19 @@ export default function UnitDetailPage({
     setTimeout(() => verifyShower(), 3800);
   };
 
+  // Sort parse so anything needing action comes first
+  const sortedParse: (Dealbreaker & { needsVerify?: boolean })[] = [
+    ...parse
+      .filter((d) => d.id === "shower" && showerStatus !== "confirmed")
+      .map((d) => ({ ...d, needsVerify: true })),
+    ...parse.filter((d) => !(d.id === "shower" && showerStatus !== "confirmed")),
+  ];
+
   return (
     <main className="min-h-dvh pb-32">
       {/* Carousel header with overlay buttons */}
       <ImageCarousel images={CAROUSEL_IMAGES} />
-      <div className="fixed top-12 left-5 right-5 z-10 flex items-center justify-between pointer-events-none">
+      <div className="fixed top-12 left-5 right-5 z-30 flex items-center justify-between pointer-events-none">
         <button
           onClick={() => router.push("/results")}
           className="pointer-events-auto w-10 h-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
@@ -172,46 +212,59 @@ export default function UnitDetailPage({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div
-        ref={tabRef}
-        className="mt-6 border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none" }}
-      >
-        <div className="flex gap-6 px-5 min-w-max">
-          {TABS.map((t) => {
-            const active = t === tab;
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`pb-3 pt-1 text-[15px] font-serif whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                  active
-                    ? "text-foreground border-foreground"
-                    : "text-muted-foreground border-transparent"
-                }`}
-              >
-                {t}
-              </button>
-            );
-          })}
+      {/* Sticky tab bar (anchor-link scroll-spy) */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border mt-6">
+        <div
+          className="overflow-x-auto [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
+          <div className="flex gap-6 px-5 min-w-max">
+            {SECTIONS.map((s) => {
+              const isActive = s.id === active;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => scrollToSection(s.id)}
+                  className={`pb-3 pt-3 text-[15px] font-serif whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                    isActive
+                      ? "text-foreground border-foreground"
+                      : "text-muted-foreground border-transparent"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Tab content */}
-      <div className="px-5 mt-6">
-        {tab === "Summary" && (
-          <SummaryTab
-            parse={parse}
+      {/* All sections stacked */}
+      <div className="px-5">
+        <Section id="summary">
+          <SummaryContent
+            parse={sortedParse}
             showerStatus={showerStatus}
             onVerify={() => setEmailOpen(true)}
             unit={unit}
           />
-        )}
-        {tab === "Unit Overview" && <UnitOverviewTab />}
-        {tab === "Building Details" && <BuildingDetailsTab unit={unit} />}
-        {tab === "Neighborhood" && <NeighborhoodTab />}
-        {tab === "Fees" && <FeesTab />}
+        </Section>
+
+        <Section id="overview">
+          <UnitOverviewContent />
+        </Section>
+
+        <Section id="building">
+          <BuildingDetailsContent unit={unit} />
+        </Section>
+
+        <Section id="neighborhood">
+          <NeighborhoodContent />
+        </Section>
+
+        <Section id="fees">
+          <FeesContent />
+        </Section>
       </div>
 
       {/* Sticky bottom */}
@@ -255,6 +308,18 @@ export default function UnitDetailPage({
   );
 }
 
+// ─── SECTION WRAPPER ─────────────────────────────────────────────────
+
+function Section({ id, children }: { id: SectionId; children: React.ReactNode }) {
+  // scroll-margin-top accounts for sticky tab bar height (~48px) so the
+  // section title isn't hidden behind it when scrolled into view.
+  return (
+    <section id={id} className="pt-6 pb-2" style={{ scrollMarginTop: 56 }}>
+      {children}
+    </section>
+  );
+}
+
 // ─── CAROUSEL ────────────────────────────────────────────────────────
 
 function ImageCarousel({ images }: { images: string[] }) {
@@ -263,7 +328,9 @@ function ImageCarousel({ images }: { images: string[] }) {
 
   const onScroll = () => {
     if (!scrollRef.current) return;
-    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
+    const idx = Math.round(
+      scrollRef.current.scrollLeft / scrollRef.current.clientWidth
+    );
     setActive(idx);
   };
 
@@ -288,7 +355,6 @@ function ImageCarousel({ images }: { images: string[] }) {
           </div>
         ))}
       </div>
-      {/* Paging dots */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
         {images.map((_, i) => (
           <span
@@ -303,50 +369,65 @@ function ImageCarousel({ images }: { images: string[] }) {
   );
 }
 
-// ─── TAB CONTENTS ─────────────────────────────────────────────────────
+// ─── SECTION CONTENTS ────────────────────────────────────────────────
 
-function SummaryTab({
+function SummaryContent({
   parse,
   showerStatus,
   onVerify,
   unit,
 }: {
-  parse: ReturnType<typeof useStore.getState>["parse"];
+  parse: (Dealbreaker & { needsVerify?: boolean })[];
   showerStatus: "confirmed" | "unknown" | "verified";
   onVerify: () => void;
   unit: ReturnType<typeof getUnit>;
 }) {
   return (
-    <div className="space-y-7">
-      <section>
-        <div className="smallcaps text-muted-foreground mb-3">
+    <div className="space-y-6">
+      <div>
+        <div className="smallcaps text-muted-foreground mb-2.5">
           Your must-haves
         </div>
-        <div className="space-y-3">
-          {parse
-            .filter((d) => d.id === "pet" || d.id === "laundry")
-            .map((d) => {
-              const Icon = DEALBREAKER_ICONS[d.id];
+        {/* Horizontally scrollable chip row */}
+        <div
+          className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {parse.map((d) => {
+            if (d.needsVerify) {
               return (
-                <MustHaveRow
+                <VerifyChip
                   key={d.id}
-                  Icon={Icon}
                   label={d.label}
-                  status="confirmed"
+                  Icon={DEALBREAKER_ICONS[d.id]}
+                  onClick={onVerify}
                 />
               );
-            })}
-          <MustHaveRow
-            Icon={ShowerHead}
-            label="Walk-in shower"
-            status={showerStatus}
-            onVerifyClick={onVerify}
-          />
+            }
+            if (d.status === "confirmed") {
+              return (
+                <ConfirmedChip
+                  key={d.id}
+                  label={d.label}
+                  Icon={DEALBREAKER_ICONS[d.id]}
+                  resolvedNow={d.id === "shower" && showerStatus === "verified"}
+                />
+              );
+            }
+            // inperson — neutral chip
+            return (
+              <InPersonChip
+                key={d.id}
+                label={d.label}
+                Icon={DEALBREAKER_ICONS[d.id]}
+              />
+            );
+          })}
         </div>
-      </section>
+      </div>
 
-      <section>
-        <div className="smallcaps text-muted-foreground mb-3">About</div>
+      <div>
+        <div className="smallcaps text-muted-foreground mb-2.5">About</div>
         <p className="text-[15px] leading-relaxed text-foreground/85">
           Welcome to {unit?.name}, where elevated living meets true community
           in the heart of {unit?.city}. Thoughtfully designed apartment homes
@@ -355,64 +436,60 @@ function SummaryTab({
           quartz countertops and custom cabinetry, and the bedroom suite
           opens to a private balcony.
         </p>
-      </section>
+      </div>
     </div>
   );
 }
 
-function UnitOverviewTab() {
+function UnitOverviewContent() {
   return (
     <div className="space-y-7">
-      <section>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-          {UNIT_FEATURES.map(({ Icon, label }) => (
-            <div key={label} className="flex items-center gap-3">
-              <Icon size={22} strokeWidth={1.5} className="text-foreground/80 shrink-0" />
-              <span className="text-[15px] leading-tight">{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section>
+      <h2 className="font-serif text-[22px] leading-tight">Unit Overview</h2>
+      <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+        {UNIT_FEATURES.map(({ Icon, label }) => (
+          <div key={label} className="flex items-center gap-3">
+            <Icon size={22} strokeWidth={1.5} className="text-foreground/80 shrink-0" />
+            <span className="text-[15px] leading-tight">{label}</span>
+          </div>
+        ))}
+      </div>
+      <div>
         <h3 className="font-medium text-[15px] mb-3">Floor plan</h3>
         <div className="bg-secondary/50 rounded-2xl h-48 flex items-center justify-center">
           <FloorPlanIllustration />
         </div>
-      </section>
-
-      <section>
+      </div>
+      <div>
         <h3 className="font-medium text-[15px] mb-3">Community Details</h3>
         <img
           src={COMMUNITY_IMAGE}
           alt="Community"
           className="w-full h-44 object-cover rounded-2xl bg-secondary"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "https://picsum.photos/seed/community/900/500";
+            (e.target as HTMLImageElement).src =
+              "https://picsum.photos/seed/community/900/500";
           }}
         />
         <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
           Shared rooftop with grills and lounge seating, secure bike room,
           24/7 fitness center, and a quiet co-working lounge.
         </p>
-      </section>
+      </div>
     </div>
   );
 }
 
-function BuildingDetailsTab({ unit }: { unit: ReturnType<typeof getUnit> }) {
+function BuildingDetailsContent({ unit }: { unit: ReturnType<typeof getUnit> }) {
   return (
     <div className="space-y-7">
-      <section>
-        <p className="text-[15px] leading-relaxed text-foreground/85">
-          {unit?.name} sits on a tree-lined block in a walkable
-          neighborhood, with restaurants, parks, and transit minutes away.
-          Built in 2024 with thoughtful materials and modern finishes — a
-          place that feels both elevated and effortless.
-        </p>
-      </section>
-
-      <section>
+      <h2 className="font-serif text-[22px] leading-tight">Building Details</h2>
+      <p className="text-[15px] leading-relaxed text-foreground/85">
+        {unit?.name} sits on a tree-lined block in a walkable neighborhood,
+        with restaurants, parks, and transit minutes away. Built in 2024 with
+        thoughtful materials and modern finishes — a place that feels both
+        elevated and effortless.
+      </p>
+      <div>
         <h3 className="smallcaps text-muted-foreground mb-3">
           Building amenities
         </h3>
@@ -424,19 +501,17 @@ function BuildingDetailsTab({ unit }: { unit: ReturnType<typeof getUnit> }) {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="divide-y divide-border border-y border-border">
+      </div>
+      <div className="divide-y divide-border border-y border-border">
         <Stat2 label="Total # of Units" value="187" />
         <Stat2 label="Year Built" value="2024" />
         <Stat2 label="Parking Available" value="Yes" />
         <Stat2
           label="Website"
-          value={`https://live${unit?.id ?? ""}.com`}
-          valueClass="text-accent-foreground"
+          value={`live${unit?.id ?? ""}.com`}
+          valueClass="text-accent-foreground underline underline-offset-2"
         />
-      </section>
-
+      </div>
       <Button
         variant="outline"
         className="w-full h-12 text-base rounded-full border-2"
@@ -447,57 +522,48 @@ function BuildingDetailsTab({ unit }: { unit: ReturnType<typeof getUnit> }) {
   );
 }
 
-function NeighborhoodTab() {
+function NeighborhoodContent() {
   return (
     <div className="space-y-7">
-      <section>
-        <h3 className="font-serif text-[22px] leading-tight mb-3">
-          The Neighborhood
-        </h3>
-        <div className="rounded-2xl overflow-hidden bg-secondary relative">
-          <img
-            src={NEIGHBORHOOD_MAP}
-            alt="Neighborhood map"
-            className="w-full h-48 object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://picsum.photos/seed/map/600/400";
-            }}
-          />
-          <button
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center shadow-sm"
-            aria-label="Expand map"
-          >
-            <MapIcon size={16} strokeWidth={1.75} />
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-          Lincoln Park · 7-minute walk to the Brown line · Whole Foods 0.4 mi.
-          Quiet residential block with weekend farmers market two blocks over.
-        </p>
-      </section>
-
-      <section>
-        <h3 className="smallcaps text-muted-foreground mb-3">
-          Walk score
-        </h3>
+      <h2 className="font-serif text-[22px] leading-tight">Neighborhood</h2>
+      <div className="rounded-2xl overflow-hidden bg-secondary relative">
+        <img
+          src={NEIGHBORHOOD_MAP}
+          alt="Neighborhood map"
+          className="w-full h-48 object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src =
+              "https://picsum.photos/seed/map/900/500";
+          }}
+        />
+        <button
+          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center shadow-sm"
+          aria-label="Expand map"
+        >
+          <MapIcon size={16} strokeWidth={1.75} />
+        </button>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Lincoln Park · 7-minute walk to the Brown line · Whole Foods 0.4 mi.
+        Quiet residential block with a weekend farmers market two blocks over.
+      </p>
+      <div>
+        <h3 className="smallcaps text-muted-foreground mb-2">Walk score</h3>
         <div className="flex items-center gap-3">
           <div className="text-3xl font-serif">94</div>
           <div className="text-sm text-muted-foreground">
             Walker&rsquo;s paradise — daily errands do not require a car.
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
 
-function FeesTab() {
+function FeesContent() {
   return (
-    <div className="space-y-7">
-      <h2 className="font-serif text-[26px] leading-tight">
-        Fees and Policies
-      </h2>
-
+    <div className="space-y-6">
+      <h2 className="font-serif text-[22px] leading-tight">Fees and Policies</h2>
       <div className="bg-secondary/60 rounded-2xl p-5">
         <h3 className="font-serif text-[18px] leading-tight">
           This property manages fees and policies on their website
@@ -509,8 +575,7 @@ function FeesTab() {
           View all info
         </Button>
       </div>
-
-      <section>
+      <div>
         <h3 className="font-medium text-[15px] mb-2">
           Equal Housing Opportunity Statement
         </h3>
@@ -522,12 +587,69 @@ function FeesTab() {
           of race, color, religion, sex, handicap, familial status, or
           national origin.
         </p>
-      </section>
+      </div>
     </div>
   );
 }
 
-// ─── PIECES ──────────────────────────────────────────────────────────
+// ─── MUST-HAVE CHIPS ─────────────────────────────────────────────────
+
+function VerifyChip({
+  label,
+  Icon,
+  onClick,
+}: {
+  label: string;
+  Icon?: LucideIcon;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="shrink-0 inline-flex items-center gap-2 bg-warn/40 border border-warn text-warn-foreground rounded-full pl-3 pr-1 py-1.5 text-[13px] hover:bg-warn/60 transition-colors"
+    >
+      {Icon && <Icon size={13} strokeWidth={1.75} />}
+      <span className="font-medium">{label}</span>
+      <span className="w-7 h-7 rounded-full bg-warn-foreground text-warn flex items-center justify-center ml-1">
+        <Mail size={13} strokeWidth={1.75} />
+      </span>
+    </button>
+  );
+}
+
+function ConfirmedChip({
+  label,
+  Icon,
+  resolvedNow,
+}: {
+  label: string;
+  Icon?: LucideIcon;
+  resolvedNow?: boolean;
+}) {
+  return (
+    <span
+      className={`shrink-0 inline-flex items-center gap-1.5 bg-success/30 text-success-foreground rounded-full px-3 py-1.5 text-[13px] ${
+        resolvedNow ? "sheet-backdrop-enter" : ""
+      }`}
+    >
+      <Check size={12} strokeWidth={2.25} />
+      {Icon && <Icon size={13} strokeWidth={1.75} />}
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function InPersonChip({ label, Icon }: { label: string; Icon?: LucideIcon }) {
+  return (
+    <span className="shrink-0 inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-3 py-1.5 text-[13px]">
+      <Eye size={12} strokeWidth={2} />
+      {Icon && <Icon size={13} strokeWidth={1.75} />}
+      <span>{label}</span>
+    </span>
+  );
+}
+
+// ─── BITS ────────────────────────────────────────────────────────────
 
 function Stat({ Icon, value }: { Icon: LucideIcon; value: string }) {
   return (
@@ -553,78 +675,6 @@ function Stat2({
     <div className="flex items-center justify-between py-3">
       <span className="text-[15px] font-medium">{label}</span>
       <span className={`text-[15px] ${valueClass}`}>{value}</span>
-    </div>
-  );
-}
-
-function MustHaveRow({
-  Icon,
-  label,
-  status,
-  onVerifyClick,
-}: {
-  Icon?: LucideIcon;
-  label: string;
-  status: "confirmed" | "unknown" | "verified";
-  onVerifyClick?: () => void;
-}) {
-  if (status === "confirmed") {
-    return (
-      <div className="flex items-start gap-3">
-        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
-          <Check size={14} strokeWidth={2} />
-        </span>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
-            <span className="text-[15px] font-medium">{label}</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Confirmed from listing
-          </p>
-        </div>
-      </div>
-    );
-  }
-  if (status === "verified") {
-    return (
-      <div className="flex items-start gap-3 sheet-backdrop-enter">
-        <span className="w-7 h-7 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
-          <Check size={14} strokeWidth={2} />
-        </span>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
-            <span className="text-[15px] font-medium">{label}</span>
-          </div>
-          <p className="text-xs text-success-foreground mt-0.5">
-            Confirmed by Maple Hill mgmt, just now
-          </p>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-start gap-3 bg-warn/30 border border-warn rounded-2xl p-3">
-      <span className="w-7 h-7 shrink-0 rounded-full bg-warn text-warn-foreground flex items-center justify-center">
-        <Info size={14} strokeWidth={2} />
-      </span>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon size={16} strokeWidth={1.75} className="text-foreground/70" />}
-          <span className="text-[15px] font-medium">{label}</span>
-        </div>
-        <p className="text-xs text-warn-foreground mt-0.5">
-          Not in our database
-        </p>
-        <button
-          onClick={onVerifyClick}
-          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium bg-card border border-border rounded-full px-3 py-1.5 hover:bg-secondary transition-colors"
-        >
-          <Mail size={14} strokeWidth={1.75} />
-          Email agent to confirm
-        </button>
-      </div>
     </div>
   );
 }
