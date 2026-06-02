@@ -63,7 +63,10 @@ export default function ResultsPage() {
           >
             <ArrowLeft size={20} strokeWidth={1.75} />
           </button>
-          <div className="flex-1 bg-card border border-border rounded-2xl px-4 py-2.5 text-center">
+          <button
+            onClick={() => setEditing(true)}
+            className="flex-1 bg-card border border-border rounded-2xl px-4 py-2.5 text-center hover:border-foreground/20 transition-colors"
+          >
             <div className="text-[15px] font-medium leading-tight">
               Home in {location || "—"}
             </div>
@@ -79,7 +82,7 @@ export default function ResultsPage() {
                 .filter(Boolean)
                 .join(" · ")}
             </div>
-          </div>
+          </button>
           <button
             onClick={() => setFilterOpen(true)}
             className="w-11 h-11 flex items-center justify-center"

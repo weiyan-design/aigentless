@@ -157,7 +157,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-background flex flex-col sheet-backdrop-enter">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col sheet-slide-down">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
         <button
