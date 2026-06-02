@@ -42,8 +42,7 @@ import { useToast } from "@/components/toast";
 import { DEALBREAKER_ICONS } from "@/lib/icons";
 import { getUnit, type Dealbreaker } from "@/lib/fixtures";
 
-const CAROUSEL_IMAGES = [
-  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=700&fit=crop",
+const OTHER_CAROUSEL_IMAGES = [
   "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=700&fit=crop",
   "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=900&h=700&fit=crop",
   "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=900&h=700&fit=crop",
@@ -166,8 +165,13 @@ export default function UnitDetailPage({
 
   return (
     <main className="min-h-dvh pb-32">
-      {/* Carousel header with overlay buttons */}
-      <ImageCarousel images={CAROUSEL_IMAGES} />
+      {/* Carousel header — unit cover first, then shared interior shots */}
+      <ImageCarousel
+        images={[
+          unit.coverImage,
+          ...OTHER_CAROUSEL_IMAGES.filter((u) => u !== unit.coverImage),
+        ]}
+      />
       <div className="fixed top-12 left-5 right-5 z-30 flex items-center justify-between pointer-events-none">
         <button
           onClick={() => router.push("/results")}

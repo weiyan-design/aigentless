@@ -276,13 +276,15 @@ function ResultsList({ units }: { units: Unit[] }) {
           href={`/units/${u.id}`}
           className="block bg-card border border-border rounded-3xl overflow-hidden active:scale-[0.99] transition-transform"
         >
-          <div
-            className={`h-48 bg-gradient-to-br ${u.imageBg} flex items-end justify-end p-4`}
-          >
-            <span className="text-7xl opacity-60 drop-shadow-sm">
-              {u.image}
-            </span>
-          </div>
+          <img
+            src={u.coverImage}
+            alt={u.name}
+            className="w-full h-48 object-cover bg-secondary"
+            loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${u.id}/900/600`;
+            }}
+          />
           <div className="px-4 py-4 space-y-1.5">
             {/* Row 1 — price range + available date */}
             <div className="flex items-baseline justify-between gap-3">

@@ -34,8 +34,9 @@ export type Unit = {
   beds: number;
   baths: number;
   sqft: number;
-  image: string; // gradient placeholder
-  imageBg: string; // bg gradient classes
+  coverImage: string;  // Unsplash URL used on cards + first carousel slot
+  image: string;       // emoji fallback (legacy)
+  imageBg: string;     // gradient fallback (legacy)
   matched: { pet: boolean; laundry: boolean; shower: boolean | null };
   showVerifyFlag?: boolean;
 };
@@ -55,6 +56,8 @@ export const UNITS: Unit[] = [
     beds: 1,
     baths: 1,
     sqft: 720,
+    coverImage:
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop",
     image: "🪴",
     imageBg: "from-emerald-200 via-stone-100 to-amber-100",
     matched: { pet: true, laundry: true, shower: null },
@@ -71,6 +74,8 @@ export const UNITS: Unit[] = [
     beds: 1,
     baths: 1,
     sqft: 680,
+    coverImage:
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=900&h=600&fit=crop",
     image: "🏙",
     imageBg: "from-slate-200 via-stone-100 to-stone-200",
     matched: { pet: true, laundry: true, shower: true },
@@ -86,6 +91,8 @@ export const UNITS: Unit[] = [
     beds: 1,
     baths: 1,
     sqft: 705,
+    coverImage:
+      "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=900&h=600&fit=crop",
     image: "🛋",
     imageBg: "from-amber-100 via-stone-100 to-rose-100",
     matched: { pet: true, laundry: true, shower: true },
@@ -101,6 +108,8 @@ export const UNITS: Unit[] = [
     beds: 1,
     baths: 1,
     sqft: 640,
+    coverImage:
+      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=600&fit=crop",
     image: "🍳",
     imageBg: "from-zinc-200 via-stone-100 to-zinc-100",
     matched: { pet: false, laundry: true, shower: true },
@@ -116,6 +125,8 @@ export const UNITS: Unit[] = [
     beds: 0,
     baths: 1,
     sqft: 380,
+    coverImage:
+      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=900&h=600&fit=crop",
     image: "🪟",
     imageBg: "from-sky-100 via-stone-100 to-stone-100",
     matched: { pet: true, laundry: false, shower: true },
@@ -131,6 +142,8 @@ export const UNITS: Unit[] = [
     beds: 2,
     baths: 1,
     sqft: 1040,
+    coverImage:
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&h=600&fit=crop",
     image: "🏡",
     imageBg: "from-stone-100 via-amber-100 to-stone-200",
     matched: { pet: true, laundry: true, shower: true },

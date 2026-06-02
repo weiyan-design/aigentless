@@ -113,11 +113,15 @@ export default function HomePage() {
 function ListingCard({ unit }: { unit: Unit }) {
   return (
     <div className="block bg-card border border-border rounded-3xl overflow-hidden">
-      <div
-        className={`h-48 bg-gradient-to-br ${unit.imageBg} flex items-end justify-end p-4`}
-      >
-        <span className="text-7xl opacity-60 drop-shadow-sm">{unit.image}</span>
-      </div>
+      <img
+        src={unit.coverImage}
+        alt={unit.name}
+        className="w-full h-48 object-cover bg-secondary"
+        loading="lazy"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${unit.id}/900/600`;
+        }}
+      />
       <div className="px-4 py-4 space-y-1.5">
         {/* Row 1 — price range + available date, prominent */}
         <div className="flex items-baseline justify-between gap-3">
