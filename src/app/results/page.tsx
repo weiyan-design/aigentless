@@ -9,7 +9,6 @@ import {
   SearchX,
   Check,
   Info,
-  Eye,
   Bed,
   Bath,
   Square,
@@ -19,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { SearchModal } from "@/components/search-modal";
 import { FilterSheet } from "@/components/filter-sheet";
 import { useStore } from "@/lib/store";
-import { DEALBREAKER_ICONS } from "@/lib/icons";
 import {
   STRETCHED_RESULT_IDS,
   STRETCH_AMOUNT,
@@ -39,11 +37,6 @@ export default function ResultsPage() {
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
-
-  const confirmedAndVerify = parse.filter(
-    (d) => d.status === "confirmed" || d.status === "verify"
-  );
-  const inperson = parse.filter((d) => d.status === "inperson");
 
   // Budget-driven results: take the demo result set, filter by rent ≤ budget
   const matchingUnits: Unit[] = STRETCHED_RESULT_IDS.map(
@@ -108,51 +101,6 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Must-haves strip — only when there are results */}
-      {hasResults && (
-        <div className="px-5 mt-4">
-          <div className="bg-card border border-border rounded-2xl px-4 py-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="smallcaps text-muted-foreground">Must-haves</span>
-              <button
-                onClick={() => setEditing(true)}
-                className="text-xs text-foreground/70 underline underline-offset-2"
-              >
-                Edit
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {confirmedAndVerify.map((d) => {
-                const Icon = DEALBREAKER_ICONS[d.id];
-                return (
-                  <span
-                    key={d.id}
-                    className="inline-flex items-center gap-1.5 text-xs bg-success/30 text-success-foreground px-2 py-1 rounded-full"
-                  >
-                    {Icon && <Icon size={12} strokeWidth={1.75} />}
-                    <span>{d.label}</span>
-                  </span>
-                );
-              })}
-            </div>
-            {inperson.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1.5 items-center">
-                <Eye size={12} strokeWidth={1.75} className="text-muted-foreground" />
-                {inperson.map((d, i) => (
-                  <span key={d.id} className="text-xs text-muted-foreground">
-                    {d.label}
-                    {i < inperson.length - 1 ? "," : ""}
-                  </span>
-                ))}
-                <span className="text-xs text-muted-foreground/70">
-                  · check in person
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="h-px bg-border my-5 mx-5" />
 
       {/* States */}
@@ -175,7 +123,6 @@ export default function ResultsPage() {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         matchingCount={matchingUnits.length}
-        onEditMustHaves={() => setEditing(true)}
       />
     </main>
   );

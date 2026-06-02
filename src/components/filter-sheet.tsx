@@ -4,15 +4,12 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useStore } from "@/lib/store";
-import { DEALBREAKER_ICONS } from "@/lib/icons";
 import { UNIT_FEATURES, COMMUNITY_AMENITIES } from "@/lib/fixtures";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   matchingCount: number;
-  onEditMustHaves: () => void;
 };
 
 const PREVIEW_COUNT = 5;
@@ -21,9 +18,7 @@ export function FilterSheet({
   open,
   onClose,
   matchingCount,
-  onEditMustHaves,
 }: Props) {
-  const parse = useStore((s) => s.parse);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [unitExpanded, setUnitExpanded] = useState(false);
   const [amenitiesExpanded, setAmenitiesExpanded] = useState(false);
@@ -40,9 +35,6 @@ export function FilterSheet({
 
   if (!open || typeof window === "undefined") return null;
 
-  const mustHaves = parse.filter(
-    (d) => d.status === "confirmed" || d.status === "verify"
-  );
   const niceToHaves = [...selected];
 
   const toggle = (label: string) => {
@@ -72,48 +64,8 @@ export function FilterSheet({
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-5 pb-5">
-        {/* Must-haves */}
-        <section className="mt-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-serif text-[20px] leading-tight">
-              Must-haves
-            </h3>
-            <button
-              onClick={() => {
-                onClose();
-                onEditMustHaves();
-              }}
-              className="text-xs text-foreground/70 underline underline-offset-2"
-            >
-              Edit
-            </button>
-          </div>
-          {mustHaves.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {mustHaves.map((d) => {
-                const Icon = DEALBREAKER_ICONS[d.id];
-                return (
-                  <span
-                    key={d.id}
-                    className="inline-flex items-center gap-1.5 text-xs bg-success/30 text-success-foreground px-2.5 py-1.5 rounded-full"
-                  >
-                    {Icon && <Icon size={12} strokeWidth={1.75} />}
-                    {d.label}
-                  </span>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic">
-              You haven&rsquo;t set any must-haves. Tap Edit to add some.
-            </p>
-          )}
-        </section>
-
-        <div className="h-px bg-border my-5" />
-
         {/* Nice-to-haves */}
-        <section>
+        <section className="mt-2">
           <h3 className="font-serif text-[20px] leading-tight mb-3">
             Nice-to-haves
           </h3>
