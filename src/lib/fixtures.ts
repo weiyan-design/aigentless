@@ -28,7 +28,9 @@ export type Unit = {
   name: string;
   address: string;
   city: string;
-  rent: number;
+  rent: number;        // "from" price — used for budget filter logic
+  rentMax: number;     // display range upper bound
+  availableDate: string; // "6/15", "7/1", etc.
   beds: number;
   baths: number;
   sqft: number;
@@ -45,23 +47,27 @@ export const UNITS: Unit[] = [
   {
     id: "maple-hill",
     name: "Maple Hill",
-    address: "2740 N Hampden Ct",
+    address: "2740 N Hampden Ct, Chicago",
     city: "Chicago",
     rent: 1850,
+    rentMax: 2120,
+    availableDate: "6/15",
     beds: 1,
     baths: 1,
     sqft: 720,
     image: "🪴",
     imageBg: "from-emerald-200 via-stone-100 to-amber-100",
-    matched: { pet: true, laundry: true, shower: null }, // shower unknown
+    matched: { pet: true, laundry: true, shower: null },
     showVerifyFlag: true,
   },
   {
     id: "lincoln-park-12",
     name: "Lincoln Park 12",
-    address: "853 W Blackhawk St",
+    address: "853 W Blackhawk St, Chicago",
     city: "Chicago",
     rent: 1890,
+    rentMax: 2150,
+    availableDate: "7/1",
     beds: 1,
     baths: 1,
     sqft: 680,
@@ -72,9 +78,11 @@ export const UNITS: Unit[] = [
   {
     id: "greenwich-flats",
     name: "Greenwich Flats",
-    address: "412 W Greenwich Ave",
+    address: "412 W Greenwich Ave, Chicago",
     city: "Chicago",
     rent: 1895,
+    rentMax: 2230,
+    availableDate: "6/22",
     beds: 1,
     baths: 1,
     sqft: 705,
@@ -82,13 +90,14 @@ export const UNITS: Unit[] = [
     imageBg: "from-amber-100 via-stone-100 to-rose-100",
     matched: { pet: true, laundry: true, shower: true },
   },
-  // Below cards are NOT shown in demo (out-of-budget or non-matching); kept for fidelity
   {
     id: "post-chicago",
     name: "Post Chicago",
-    address: "1102 W Belmont Ave",
+    address: "1102 W Belmont Ave, Chicago",
     city: "Chicago",
-    rent: 1750,
+    rent: 2260,
+    rentMax: 2890,
+    availableDate: "6/30",
     beds: 1,
     baths: 1,
     sqft: 640,
@@ -99,9 +108,11 @@ export const UNITS: Unit[] = [
   {
     id: "audley-studio",
     name: "Audley Studio",
-    address: "190 N State St",
+    address: "190 N State St, Chicago",
     city: "Chicago",
-    rent: 1650,
+    rent: 1980,
+    rentMax: 2240,
+    availableDate: "7/10",
     beds: 0,
     baths: 1,
     sqft: 380,
@@ -112,9 +123,11 @@ export const UNITS: Unit[] = [
   {
     id: "ascent-homes",
     name: "Ascent Apartment Homes",
-    address: "99 Ascension Dr",
+    address: "99 Ascension Dr, Chicago",
     city: "Chicago",
-    rent: 2100,
+    rent: 2400,
+    rentMax: 2950,
+    availableDate: "8/1",
     beds: 2,
     baths: 1,
     sqft: 1040,

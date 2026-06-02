@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SearchModal } from "@/components/search-modal";
+import { SortSheet, SORT_LABELS, type SortOption } from "@/components/sort-sheet";
 import { useStore } from "@/lib/store";
-import { UNITS } from "@/lib/fixtures";
+import { UNITS, type Unit } from "@/lib/fixtures";
 
 // Discovery listings on the home view — units NOT in the demo result set
 // so the demo flow stays clean.
@@ -12,8 +13,10 @@ const DISCOVERY_IDS = ["audley-studio", "post-chicago", "ascent-homes"];
 
 export default function HomePage() {
   const router = useRouter();
-  const { location, resetAll } = useStore();
+  const { resetAll } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sort, setSort] = useState<SortOption>("distance");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -36,43 +39,31 @@ export default function HomePage() {
           <span className="opacity-50">prototype</span>
         </div>
 
-        <h1 className="font-serif text-[32px] leading-[1.05] mt-5 tracking-tight">
-          Find your next place
-        </h1>
-
-        {/* Search bar — full width, tap to open modal */}
+        {/* Centered search bar */}
         <button
           onClick={() => setModalOpen(true)}
-          className="mt-5 w-full flex items-center gap-3 bg-card border border-border rounded-full px-4 py-3.5 text-left hover:border-foreground/20 transition-colors"
+          className="mt-6 w-full flex items-center justify-center gap-2 bg-card border border-border rounded-full px-5 py-4 hover:border-foreground/20 transition-colors"
         >
           <SearchIcon />
-          <span className={`text-[15px] flex-1 ${location ? "text-foreground" : "text-muted-foreground"}`}>
-            {location || "Search city or neighborhood"}
+          <span className="text-[16px] text-muted-foreground">
+            Find your next place
           </span>
         </button>
-
-        {/* Compact filter + sort row */}
-        <div className="mt-3 flex items-center justify-between">
-          <button
-            onClick={() => setModalOpen(true)}
-            className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center"
-            aria-label="Filter"
-          >
-            <FilterIcon />
-          </button>
-          <button className="inline-flex items-center gap-1.5 text-sm text-foreground/80">
-            <SortIcon />
-            Sort by price
-          </button>
-        </div>
       </div>
 
-      <div className="h-px bg-border my-5 mx-5" />
-
       {/* Discovery listings */}
-      <div className="px-5">
-        <div className="text-xs text-muted-foreground mb-3">
-          Recommended for you
+      <div className="px-5 mt-7">
+        <div className="flex items-center justify-between mb-3.5">
+          <span className="text-xs text-muted-foreground smallcaps">
+            Recommended for you
+          </span>
+          <button
+            onClick={() => setSortOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-foreground/80 px-2.5 py-1 rounded-full hover:bg-secondary"
+          >
+            <SortIcon />
+            {SORT_LABELS[sort]}
+          </button>
         </div>
         <div className="space-y-4">
           {discoveryUnits.map((u) => (
@@ -86,7 +77,7 @@ export default function HomePage() {
         <div className="phone-frame !min-h-0 pointer-events-auto">
           <div className="bg-background border-t border-border flex items-center justify-around py-2 pb-6">
             <NavItem icon="🏠" label="Home" active />
-            <NavItem icon="🔍" label="Search" />
+            <NavItem icon="🔍" label="Search" onClick={() => setModalOpen(true)} />
             <NavItem icon="👤" label="Profile" />
           </div>
         </div>
@@ -100,15 +91,17 @@ export default function HomePage() {
           router.push("/results");
         }}
       />
+      <SortSheet
+        open={sortOpen}
+        onClose={() => setSortOpen(false)}
+        value={sort}
+        onChange={setSort}
+      />
     </main>
   );
 }
 
-function ListingCard({
-  unit,
-}: {
-  unit: (typeof UNITS)[number];
-}) {
+function ListingCard({ unit }: { unit: Unit }) {
   return (
     <div className="block bg-card border border-border rounded-3xl overflow-hidden">
       <div
@@ -116,16 +109,26 @@ function ListingCard({
       >
         <span className="text-7xl opacity-60 drop-shadow-sm">{unit.image}</span>
       </div>
-      <div className="p-4">
-        <h3 className="font-serif text-[22px] leading-tight">{unit.name}</h3>
-        <p className="text-sm text-muted-foreground mt-0.5">{unit.address}</p>
-        <div className="flex items-center gap-4 text-sm text-foreground/80 mt-3">
+      <div className="px-4 py-4 space-y-1.5">
+        {/* Row 1 — price range + available date, prominent */}
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-serif text-[22px] leading-tight">
+            ${unit.rent.toLocaleString()}–${unit.rentMax.toLocaleString()}
+            <span className="text-sm text-muted-foreground font-sans font-normal">
+              /mo
+            </span>
+          </span>
+          <span className="text-[15px] font-medium text-foreground/80 whitespace-nowrap">
+            Available {unit.availableDate}
+          </span>
+        </div>
+        {/* Row 2 — address */}
+        <p className="text-sm text-muted-foreground">{unit.address}</p>
+        {/* Row 3 — specs */}
+        <div className="flex items-center gap-4 text-sm text-foreground/80 pt-0.5">
           <span>🛏 {unit.beds === 0 ? "Studio" : unit.beds}</span>
           <span>🛁 {unit.baths}</span>
-          <span>⬚ {unit.sqft} ft²</span>
-          <span className="ml-auto font-medium">
-            ${unit.rent.toLocaleString()}
-          </span>
+          <span>⬚ {unit.sqft.toLocaleString()} ft²</span>
         </div>
       </div>
     </div>
@@ -136,13 +139,16 @@ function NavItem({
   icon,
   label,
   active = false,
+  onClick,
 }: {
   icon: string;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
+      onClick={onClick}
       className={`flex flex-col items-center gap-0.5 px-4 py-1 ${
         active ? "text-foreground" : "text-muted-foreground"
       }`}
@@ -158,22 +164,6 @@ function SearchIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="6" x2="14" y2="6" />
-      <line x1="18" y1="6" x2="20" y2="6" />
-      <circle cx="16" cy="6" r="2" />
-      <line x1="4" y1="12" x2="6" y2="12" />
-      <line x1="10" y1="12" x2="20" y2="12" />
-      <circle cx="8" cy="12" r="2" />
-      <line x1="4" y1="18" x2="14" y2="18" />
-      <line x1="18" y1="18" x2="20" y2="18" />
-      <circle cx="16" cy="18" r="2" />
     </svg>
   );
 }
