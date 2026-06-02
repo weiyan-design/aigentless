@@ -13,10 +13,10 @@ type SectionId = "where" | "when" | "beds" | "budget" | "deal";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "where", label: "Where" },
-  { id: "when", label: "Move-in" },
+  { id: "when", label: "Move-in date" },
   { id: "beds", label: "Beds & baths" },
   { id: "budget", label: "Budget" },
-  { id: "deal", label: "Dealbreakers" },
+  { id: "deal", label: "Must-haves" },
 ];
 
 // Typeahead source for the Where input
@@ -96,8 +96,35 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
   };
 
   const onSearch = () => {
-    if (dealbreakerText.trim().length === 0) return;
+    if (location.trim().length === 0) return;
     onSubmit();
+  };
+
+  const isLastSection = expanded === SECTIONS[SECTIONS.length - 1].id;
+  const canSearch = location.trim().length > 0;
+  const onNextOrSearch = () => {
+    if (isLastSection) onSearch();
+    else advance(expanded);
+  };
+
+  const onReset = () => {
+    switch (expanded) {
+      case "where":
+        setLayer1({ location: "" });
+        break;
+      case "when":
+        setLayer1({ moveIn: "" });
+        break;
+      case "beds":
+        setLayer1({ bedrooms: 1, bathrooms: 1 });
+        break;
+      case "budget":
+        setLayer1({ budgetMin: 1000, budget: 1800 });
+        break;
+      case "deal":
+        setDealbreaker("");
+        break;
+    }
   };
 
   const startListening = () => {
@@ -200,15 +227,27 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
         })}
       </div>
 
-      {/* Sticky Search button */}
-      <div className="px-5 pb-6 pt-3 shrink-0 bg-background border-t border-border">
-        <Button
-          onClick={onSearch}
-          disabled={dealbreakerText.trim().length === 0 || listening}
-          className="w-full h-13 text-base rounded-full"
+      {/* Sticky footer: Reset + Next / Search */}
+      <div className="px-5 pb-6 pt-3 shrink-0 bg-background border-t border-border flex items-center justify-between gap-4">
+        <button
+          onClick={onReset}
+          className="text-[15px] underline underline-offset-4 text-foreground"
         >
-          <SearchIcon />
-          <span className="ml-2">Search</span>
+          Reset
+        </button>
+        <Button
+          onClick={onNextOrSearch}
+          disabled={listening || (isLastSection && !canSearch)}
+          className="px-8 h-12 rounded-full"
+        >
+          {isLastSection ? (
+            <>
+              <SearchIcon />
+              <span className="ml-2">Search</span>
+            </>
+          ) : (
+            "Next"
+          )}
         </Button>
       </div>
     </div>,

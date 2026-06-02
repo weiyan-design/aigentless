@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 type Tab = "dates" | "months" | "flexible";
 
@@ -47,7 +47,6 @@ export function MoveInPicker({ value, onChange }: Props) {
 
 function DatesView({
   onPick,
-  currentValue,
 }: {
   onPick: (v: string) => void;
   currentValue: string;
@@ -56,7 +55,6 @@ function DatesView({
   const [viewMonth, setViewMonth] = useState(startOfMonth(today));
   const [start, setStart] = useState<Date | null>(null);
   const [end, setEnd] = useState<Date | null>(null);
-  const chipsRef = useRef<HTMLDivElement>(null);
 
   const onSelectDate = (d: Date) => {
     if (!start || (start && end)) {
@@ -75,75 +73,24 @@ function DatesView({
     }
   };
 
-  const goToMonth = (m: Date) => {
-    setViewMonth(startOfMonth(m));
-  };
-
-  // Generate month chips from current month → Dec 2027
-  const monthChips: Date[] = [];
-  let cur = startOfMonth(today);
-  const end2027 = new Date(2027, 11, 1);
-  while (cur <= end2027) {
-    monthChips.push(new Date(cur));
-    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-  }
-
   return (
-    <div>
-      <Calendar
-        viewMonth={viewMonth}
-        onPrev={() => {
-          const prev = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
-          if (prev >= startOfMonth(today)) setViewMonth(prev);
-        }}
-        onNext={() =>
-          setViewMonth(
-            new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)
-          )
-        }
-        canPrev={
-          viewMonth.getTime() > startOfMonth(today).getTime()
-        }
-        today={today}
-        start={start}
-        end={end}
-        onSelect={onSelectDate}
-      />
-
-      {/* Month-jump chips */}
-      <div className="mt-3 -mx-4">
-        <div
-          ref={chipsRef}
-          className="flex gap-1.5 overflow-x-auto px-4 pb-1 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {monthChips.map((m) => {
-            const active =
-              m.getFullYear() === viewMonth.getFullYear() &&
-              m.getMonth() === viewMonth.getMonth();
-            return (
-              <button
-                key={m.toISOString()}
-                onClick={() => goToMonth(m)}
-                className={`text-xs px-3 py-1.5 rounded-full border whitespace-nowrap ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:border-foreground/30"
-                }`}
-              >
-                {fmtMonthShort(m)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {currentValue && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Selected: <span className="text-foreground font-medium">{currentValue}</span>
-        </p>
-      )}
-    </div>
+    <Calendar
+      viewMonth={viewMonth}
+      onPrev={() => {
+        const prev = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+        if (prev >= startOfMonth(today)) setViewMonth(prev);
+      }}
+      onNext={() =>
+        setViewMonth(
+          new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)
+        )
+      }
+      canPrev={viewMonth.getTime() > startOfMonth(today).getTime()}
+      today={today}
+      start={start}
+      end={end}
+      onSelect={onSelectDate}
+    />
   );
 }
 
