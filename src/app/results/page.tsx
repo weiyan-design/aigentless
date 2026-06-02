@@ -72,6 +72,9 @@ export default function ResultsPage() {
                 moveIn ? shortDate(moveIn) : null,
                 `${bedrooms === 0 ? "Studio" : `${bedrooms} bed`}`,
                 `${bathrooms} bath`,
+                parse.length > 0
+                  ? `${parse.length} must-have${parse.length === 1 ? "" : "s"}`
+                  : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}
