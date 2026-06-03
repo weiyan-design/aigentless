@@ -498,15 +498,15 @@ function DealContent({
                   }
                 }}
                 placeholder="Add must-have"
-                className="text-xs bg-background border border-foreground/30 rounded-full px-3 py-1 min-w-[120px] focus:outline-none focus:border-foreground/60"
+                className="h-10 text-[13px] bg-background border border-foreground/30 rounded-full px-3.5 min-w-[140px] focus:outline-none focus:border-foreground/60"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="inline-flex items-center gap-1 text-xs text-foreground/70 border border-dashed border-foreground/30 rounded-full px-2.5 py-1 hover:bg-secondary hover:text-foreground transition-colors"
+                className="h-10 inline-flex items-center gap-1 text-[13px] text-foreground/70 border border-dashed border-foreground/30 rounded-full px-3.5 hover:bg-secondary hover:text-foreground transition-colors"
               >
-                <Plus size={11} strokeWidth={2} />
+                <Plus size={13} strokeWidth={2} />
                 Add
               </button>
             )}
@@ -567,18 +567,18 @@ function ParseChip({
     d.status === "confirmed" ? Check : d.status === "verify" ? Info : Eye;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-1 py-1 text-xs ${tone}`}
+      className={`h-10 inline-flex items-center gap-1.5 rounded-full pl-3 pr-1.5 text-[13px] ${tone}`}
     >
-      <StatusIcon size={11} strokeWidth={2.25} />
-      {Icon && <Icon size={11} strokeWidth={1.75} />}
+      <StatusIcon size={12} strokeWidth={2.25} />
+      {Icon && <Icon size={13} strokeWidth={1.75} />}
       <span>{d.label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${d.label}`}
-        className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-foreground/10"
+        className="ml-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-foreground/10"
       >
-        <X size={10} strokeWidth={2.25} />
+        <X size={12} strokeWidth={2.25} />
       </button>
     </span>
   );
