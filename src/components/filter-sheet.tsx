@@ -61,6 +61,17 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
     }
   }, [open]);
 
+  // Sort: must-haves first, then nice-to-haves; within each group,
+  // search-bar items first. Computed every render (hooks must run before
+  // any early return).
+  const sortedSelections = useMemo(() => {
+    return Object.values(selections).sort((a, b) => {
+      if (a.mustHave !== b.mustHave) return a.mustHave ? -1 : 1;
+      if (a.fromSearch !== b.fromSearch) return a.fromSearch ? -1 : 1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [selections]);
+
   if (!open || typeof window === "undefined") return null;
 
   const toggleSelect = (label: string) => {
@@ -92,15 +103,6 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
   };
 
   const clearAll = () => setSelections({});
-
-  // Sort: must-haves first, then nice-to-haves; within each group, search-bar items first
-  const sortedSelections = useMemo(() => {
-    return Object.values(selections).sort((a, b) => {
-      if (a.mustHave !== b.mustHave) return a.mustHave ? -1 : 1;
-      if (a.fromSearch !== b.fromSearch) return a.fromSearch ? -1 : 1;
-      return a.label.localeCompare(b.label);
-    });
-  }, [selections]);
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-background flex flex-col sheet-backdrop-enter">
