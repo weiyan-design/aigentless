@@ -76,7 +76,7 @@ export default function HomePage() {
             {pastTourUnits.map(({ unit, toured }) => (
               <Link
                 key={unit.id}
-                href={`/memory/${unit.id}`}
+                href={`/tour/${unit.id}?past=1`}
                 className="shrink-0 w-44 bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.99] transition-transform"
               >
                 <img

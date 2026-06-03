@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Eye, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,15 +17,19 @@ export default function TourPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isPastView = searchParams.get("past") === "1";
   const unit = getUnit(id);
   const { captures, capture, resetCaptures, parse } = useStore();
   const [mounted, setMounted] = useState(false);
-  const [started, setStarted] = useState(false);
+  // Past-view skips the "I'm here — start" gate and shows results as-is.
+  const [started, setStarted] = useState(isPastView);
 
   useEffect(() => {
     setMounted(true);
-    resetCaptures(id);
-  }, [id, resetCaptures]);
+    // Only reset captures for fresh tour visits, never for past-view
+    if (!isPastView) resetCaptures(id);
+  }, [id, resetCaptures, isPastView]);
 
   if (!unit) return notFound();
   if (!mounted) return null;
@@ -54,6 +58,7 @@ export default function TourPage({
 
   const onCapture = (itemId: string, value: CaptureValue) => {
     capture(id, itemId, value);
+    if (isPastView) return; // editing a past tour doesn't re-route
     const updated = { ...unitCaptures, [itemId]: value };
     const nextCount = interactiveItems.filter((i) => updated[i.id]).length;
     if (nextCount === interactiveItems.length) {
@@ -72,7 +77,7 @@ export default function TourPage({
     <main className="min-h-dvh pb-32">
       <div className="px-5 pt-12">
         <button
-          onClick={() => router.push(`/units/${id}`)}
+          onClick={() => router.push(isPastView ? "/" : `/units/${id}`)}
           className="w-11 h-11 rounded-full bg-card border border-border flex items-center justify-center"
           aria-label="Back"
         >
@@ -81,7 +86,17 @@ export default function TourPage({
       </div>
 
       <div className="px-5 mt-4">
-        {!started ? (
+        {isPastView ? (
+          <>
+            <div className="text-xs text-muted-foreground">Past tour</div>
+            <h1 className="font-serif text-[28px] leading-tight mt-1">
+              {unit.name}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {capturedCount} of {interactiveItems.length} captured · tap to edit
+            </p>
+          </>
+        ) : !started ? (
           <>
             <h1 className="font-serif text-[32px] leading-tight">
               Your tour checklist
@@ -173,8 +188,8 @@ export default function TourPage({
         </div>
       </section>
 
-      {/* Sticky CTA pre-tour only */}
-      {!started && (
+      {/* Sticky CTA pre-tour only (hidden in past-view) */}
+      {!started && !isPastView && (
         <div className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none">
           <div className="phone-frame !min-h-0 pointer-events-auto">
             <div className="px-5 py-4 bg-gradient-to-t from-background via-background/95 to-transparent pt-8">
@@ -189,8 +204,8 @@ export default function TourPage({
         </div>
       )}
 
-      {/* When all captured, show finishing toast / spinner */}
-      {started && allCaptured && (
+      {/* When all captured, show finishing toast / spinner — not in past-view */}
+      {started && allCaptured && !isPastView && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 text-sm text-muted-foreground z-30">
           Saving your notes…
         </div>
