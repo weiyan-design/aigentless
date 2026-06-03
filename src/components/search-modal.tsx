@@ -100,6 +100,12 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
 
   const onSearch = () => {
     if (location.trim().length === 0) return;
+    // Demo convenience: if the renter never typed/spoke a dealbreaker but
+    // hit Search anyway, fall back to the demo parse so downstream pages
+    // (results header, unit detail must-have chips) still tell the story.
+    if (parse.length === 0 && dealbreakerText.trim().length === 0) {
+      setParse(DEMO_PARSE);
+    }
     onSubmit();
   };
 
