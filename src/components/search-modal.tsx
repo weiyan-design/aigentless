@@ -2,14 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Mic, MapPin, Check, Info, Eye, Plus } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { X, Search, Mic, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoveInPicker } from "@/components/move-in-picker";
 import { PriceRangeSlider } from "@/components/price-range-slider";
 import { useStore } from "@/lib/store";
-import { DEALBREAKER_ICONS } from "@/lib/icons";
 import { DEMO_INPUT, type Dealbreaker } from "@/lib/fixtures";
 
 type SectionId = "where" | "when" | "beds" | "budget" | "deal";
@@ -480,7 +478,6 @@ function DealContent({
               <ParseChip
                 key={d.id}
                 d={d}
-                Icon={DEALBREAKER_ICONS[d.id]}
                 onRemove={() => onRemoveParse(d.id)}
               />
             ))}
@@ -550,33 +547,19 @@ function DealContent({
 
 function ParseChip({
   d,
-  Icon,
   onRemove,
 }: {
   d: Dealbreaker;
-  Icon?: LucideIcon;
   onRemove: () => void;
 }) {
-  const tone =
-    d.status === "confirmed"
-      ? "bg-success/30 text-success-foreground"
-      : d.status === "verify"
-      ? "bg-warn/50 text-warn-foreground"
-      : "bg-accent/40 text-accent-foreground";
-  const StatusIcon =
-    d.status === "confirmed" ? Check : d.status === "verify" ? Info : Eye;
   return (
-    <span
-      className={`h-10 inline-flex items-center gap-1.5 rounded-full pl-3 pr-1.5 text-[13px] ${tone}`}
-    >
-      <StatusIcon size={12} strokeWidth={2.25} />
-      {Icon && <Icon size={13} strokeWidth={1.75} />}
+    <span className="h-10 inline-flex items-center rounded-full pl-3.5 pr-1.5 text-[13px] bg-success/30 text-success-foreground">
       <span>{d.label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${d.label}`}
-        className="ml-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-foreground/10"
+        className="ml-1.5 w-6 h-6 rounded-full flex items-center justify-center hover:bg-foreground/10"
       >
         <X size={12} strokeWidth={2.25} />
       </button>
