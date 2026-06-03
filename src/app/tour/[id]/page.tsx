@@ -167,25 +167,25 @@ export default function TourPage({
         </div>
       </section>
 
-      {/* Recommended — hidden in past-view */}
-      {!isPastView && (
-        <section className="px-5 mt-7">
+      {/* Recommended — label hidden in past-view, rows still shown */}
+      <section className={isPastView ? "px-5 mt-2" : "px-5 mt-7"}>
+        {!isPastView && (
           <div className="smallcaps text-muted-foreground mb-3">
             We also recommend
           </div>
-          <div className="space-y-2">
-            {recommended.map((item) => (
-              <ChecklistRow
-                key={item.id}
-                label={item.label}
-                value={unitCaptures[item.id]}
-                interactive={started}
-                onCapture={(v) => onCapture(item.id, v)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+        )}
+        <div className="space-y-2">
+          {recommended.map((item) => (
+            <ChecklistRow
+              key={item.id}
+              label={item.label}
+              value={unitCaptures[item.id]}
+              interactive={started}
+              onCapture={(v) => onCapture(item.id, v)}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* Sticky CTA pre-tour only (hidden in past-view) */}
       {!started && !isPastView && (
