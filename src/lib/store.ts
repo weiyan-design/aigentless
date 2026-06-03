@@ -88,8 +88,15 @@ export const useStore = create<AigentlessState>()(
           };
         }),
       resetAll: () =>
-        // Preserve pastTours across resets so the home page keeps the log
-        set((s) => ({ ...initial, pastTours: s.pastTours })),
+        // Preserve past tours AND their captures across resets so revisiting
+        // a logged tour shows what the user actually noticed
+        set((s) => ({
+          ...initial,
+          pastTours: s.pastTours,
+          captures: Object.fromEntries(
+            s.pastTours.map((t) => [t.unitId, s.captures[t.unitId] ?? {}])
+          ),
+        })),
     }),
     {
       name: "aigentless-demo",
