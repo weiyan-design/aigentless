@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Mic, MapPin, Check, Info, Eye } from "lucide-react";
+import { X, Search, Mic, MapPin, Check, Info, Eye, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +75,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
     parse,
     setLayer1,
     setDealbreaker,
+    setParse,
   } = useStore();
 
   const [expanded, setExpanded] = useState<SectionId>("where");
@@ -225,6 +226,14 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
                   listening={listening}
                   onMic={startListening}
                   parse={parse}
+                  onRemoveParse={(id) => setParse(parse.filter((d) => d.id !== id))}
+                  onAddParse={(label) => {
+                    const id = label.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now();
+                    setParse([
+                      ...parse,
+                      { id, label, icon: "✨", status: "confirmed" },
+                    ]);
+                  }}
                 />
               )}
             </SectionCard>
@@ -431,14 +440,32 @@ function DealContent({
   listening,
   onMic,
   parse,
+  onRemoveParse,
+  onAddParse,
 }: {
   value: string;
   onChange: (v: string) => void;
   listening: boolean;
   onMic: () => void;
   parse: Dealbreaker[];
+  onRemoveParse: (id: string) => void;
+  onAddParse: (label: string) => void;
 }) {
-  const showParse = value.trim().length > 0 && !listening;
+  const showParse = (value.trim().length > 0 || parse.length > 0) && !listening;
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding) inputRef.current?.focus();
+  }, [adding]);
+
+  const commitAdd = () => {
+    const v = draft.trim();
+    if (v.length > 0) onAddParse(v);
+    setDraft("");
+    setAdding(false);
+  };
 
   return (
     <div>
@@ -448,10 +475,41 @@ function DealContent({
           <p className="text-xs text-muted-foreground mb-1.5">
             Got it — {parse.length} must-have{parse.length === 1 ? "" : "s"}:
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {parse.map((d) => (
-              <ParseChip key={d.id} d={d} Icon={DEALBREAKER_ICONS[d.id]} />
+              <ParseChip
+                key={d.id}
+                d={d}
+                Icon={DEALBREAKER_ICONS[d.id]}
+                onRemove={() => onRemoveParse(d.id)}
+              />
             ))}
+            {adding ? (
+              <input
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitAdd}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitAdd();
+                  if (e.key === "Escape") {
+                    setDraft("");
+                    setAdding(false);
+                  }
+                }}
+                placeholder="Add must-have"
+                className="text-xs bg-background border border-foreground/30 rounded-full px-3 py-1 min-w-[120px] focus:outline-none focus:border-foreground/60"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="inline-flex items-center gap-1 text-xs text-foreground/70 border border-dashed border-foreground/30 rounded-full px-2.5 py-1 hover:bg-secondary hover:text-foreground transition-colors"
+              >
+                <Plus size={11} strokeWidth={2} />
+                Add
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -490,30 +548,38 @@ function DealContent({
   );
 }
 
-function ParseChip({ d, Icon }: { d: Dealbreaker; Icon?: LucideIcon }) {
-  if (d.status === "confirmed") {
-    return (
-      <span className="inline-flex items-center gap-1.5 bg-success/30 text-success-foreground rounded-full px-2.5 py-1 text-xs">
-        <Check size={11} strokeWidth={2.25} />
-        {Icon && <Icon size={11} strokeWidth={1.75} />}
-        {d.label}
-      </span>
-    );
-  }
-  if (d.status === "verify") {
-    return (
-      <span className="inline-flex items-center gap-1.5 bg-warn/50 text-warn-foreground rounded-full px-2.5 py-1 text-xs">
-        <Info size={11} strokeWidth={2.25} />
-        {Icon && <Icon size={11} strokeWidth={1.75} />}
-        {d.label}
-      </span>
-    );
-  }
+function ParseChip({
+  d,
+  Icon,
+  onRemove,
+}: {
+  d: Dealbreaker;
+  Icon?: LucideIcon;
+  onRemove: () => void;
+}) {
+  const tone =
+    d.status === "confirmed"
+      ? "bg-success/30 text-success-foreground"
+      : d.status === "verify"
+      ? "bg-warn/50 text-warn-foreground"
+      : "bg-accent/40 text-accent-foreground";
+  const StatusIcon =
+    d.status === "confirmed" ? Check : d.status === "verify" ? Info : Eye;
   return (
-    <span className="inline-flex items-center gap-1.5 bg-accent/40 text-accent-foreground rounded-full px-2.5 py-1 text-xs">
-      <Eye size={11} strokeWidth={2.25} />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-1 py-1 text-xs ${tone}`}
+    >
+      <StatusIcon size={11} strokeWidth={2.25} />
       {Icon && <Icon size={11} strokeWidth={1.75} />}
-      {d.label}
+      <span>{d.label}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${d.label}`}
+        className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-foreground/10"
+      >
+        <X size={10} strokeWidth={2.25} />
+      </button>
     </span>
   );
 }
