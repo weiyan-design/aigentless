@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { DEMO_PARSE, LAYER1_DEFAULTS, type Dealbreaker } from "./fixtures";
+import { LAYER1_DEFAULTS, type Dealbreaker } from "./fixtures";
 
 export type CaptureValue = { rating: "up" | "down" | "skip"; note?: string };
 
@@ -43,7 +43,7 @@ const initial = {
   bathrooms: 1,
   moveIn: LAYER1_DEFAULTS.moveIn,
   dealbreakerText: "",
-  parse: DEMO_PARSE,
+  parse: [] as Dealbreaker[],
   showerVerified: false,
   captures: {} as Record<string, Record<string, CaptureValue>>,
 };

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MoveInPicker } from "@/components/move-in-picker";
 import { PriceRangeSlider } from "@/components/price-range-slider";
 import { useStore } from "@/lib/store";
-import { DEMO_INPUT, type Dealbreaker } from "@/lib/fixtures";
+import { DEMO_INPUT, DEMO_PARSE, type Dealbreaker } from "@/lib/fixtures";
 
 type SectionId = "where" | "when" | "beds" | "budget" | "deal";
 
@@ -135,6 +135,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
     setListening(true);
     const text = DEMO_INPUT;
     setDealbreaker("");
+    setParse([]);
     setTimeout(() => {
       let i = 0;
       const id = setInterval(() => {
@@ -143,6 +144,8 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
         if (i >= text.length) {
           clearInterval(id);
           setListening(false);
+          // Parse the transcription into must-have chips
+          setParse(DEMO_PARSE);
         }
       }, 30);
     }, 900);
@@ -220,7 +223,17 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
               {s.id === "deal" && (
                 <DealContent
                   value={dealbreakerText}
-                  onChange={setDealbreaker}
+                  onChange={(v) => {
+                    setDealbreaker(v);
+                    // Populate parse the first time the user starts typing
+                    // (when mic isn't being used). Clear it if they delete
+                    // everything.
+                    if (v.trim().length === 0) {
+                      setParse([]);
+                    } else if (parse.length === 0) {
+                      setParse(DEMO_PARSE);
+                    }
+                  }}
                   listening={listening}
                   onMic={startListening}
                   parse={parse}
@@ -449,7 +462,7 @@ function DealContent({
   onRemoveParse: (id: string) => void;
   onAddParse: (label: string) => void;
 }) {
-  const showParse = (value.trim().length > 0 || parse.length > 0) && !listening;
+  const showParse = parse.length > 0 && !listening;
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
