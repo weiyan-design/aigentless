@@ -156,7 +156,7 @@ export function SearchModal({ open, onClose, onSubmit }: Props) {
     budget: `$${budgetMin.toLocaleString()} – $${budget.toLocaleString()}`,
     deal: dealbreakerText
       ? dealbreakerText.slice(0, 32) + (dealbreakerText.length > 32 ? "…" : "")
-      : "Optional — protect your tour",
+      : "",
   };
 
   return createPortal(
