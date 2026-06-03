@@ -92,9 +92,6 @@ export default function TourPage({
             <h1 className="font-serif text-[28px] leading-tight mt-1">
               {unit.name}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {capturedCount} of {interactiveItems.length} captured · tap to edit
-            </p>
           </>
         ) : !started ? (
           <>
@@ -151,11 +148,11 @@ export default function TourPage({
         </section>
       )}
 
-      {/* Your list */}
+      {/* Your list / Your notes */}
       <section className="px-5 mt-7">
         <div className="smallcaps text-accent-foreground inline-flex items-center gap-1.5 bg-accent/60 px-2.5 py-1 rounded-full mb-3">
           <Eye size={12} strokeWidth={2} />
-          <span>On your list to check</span>
+          <span>{isPastView ? "Your notes" : "On your list to check"}</span>
         </div>
         <div className="space-y-2">
           {yours.map((item) => (
@@ -170,23 +167,25 @@ export default function TourPage({
         </div>
       </section>
 
-      {/* Recommended */}
-      <section className="px-5 mt-7">
-        <div className="smallcaps text-muted-foreground mb-3">
-          We also recommend
-        </div>
-        <div className="space-y-2">
-          {recommended.map((item) => (
-            <ChecklistRow
-              key={item.id}
-              label={item.label}
-              value={unitCaptures[item.id]}
-              interactive={started}
-              onCapture={(v) => onCapture(item.id, v)}
-            />
-          ))}
-        </div>
-      </section>
+      {/* Recommended — hidden in past-view */}
+      {!isPastView && (
+        <section className="px-5 mt-7">
+          <div className="smallcaps text-muted-foreground mb-3">
+            We also recommend
+          </div>
+          <div className="space-y-2">
+            {recommended.map((item) => (
+              <ChecklistRow
+                key={item.id}
+                label={item.label}
+                value={unitCaptures[item.id]}
+                interactive={started}
+                onCapture={(v) => onCapture(item.id, v)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Sticky CTA pre-tour only (hidden in past-view) */}
       {!started && !isPastView && (
