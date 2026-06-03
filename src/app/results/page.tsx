@@ -262,15 +262,6 @@ function ResultsList({ units }: { units: Unit[] }) {
                 {u.sqft.toLocaleString()} ft²
               </span>
             </div>
-            {/* Row 4 — must-have chips */}
-            <div className="flex flex-wrap gap-1.5 pt-2">
-              <SuccessChip>Pet</SuccessChip>
-              <SuccessChip>Laundry</SuccessChip>
-              {u.matched.shower === true && <SuccessChip>Shower</SuccessChip>}
-              {u.matched.shower === null && (
-                <WarnChip>1 to verify</WarnChip>
-              )}
-            </div>
           </div>
         </Link>
       ))}
