@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,31 +23,35 @@ type Selection = {
 
 const PREVIEW_COUNT = 5;
 
+// Selections live in a Map to preserve insertion order — toggling a row's
+// must-have state should NOT reorder the list. Sorting only happens when
+// the sheet is initially seeded.
 export function FilterSheet({ open, onClose, matchingCount }: Props) {
   const parse = useStore((s) => s.parse);
-  const [selections, setSelections] = useState<Record<string, Selection>>({});
+  const [selections, setSelections] = useState<Map<string, Selection>>(
+    () => new Map()
+  );
   const [unitExpanded, setUnitExpanded] = useState(false);
   const [amenitiesExpanded, setAmenitiesExpanded] = useState(false);
 
   // Seed selections from the dealbreaker parse whenever the sheet opens.
-  // Search-bar items default to must-have = true.
+  // Search-bar items default to must-have = true. Order: search-bar items
+  // first (in parse order), then any non-search picks already chosen.
   useEffect(() => {
     if (!open) return;
-    const seeded: Record<string, Selection> = {};
-    parse.forEach((d) => {
-      seeded[d.label] = {
-        label: d.label,
-        mustHave: true,
-        fromSearch: true,
-      };
-    });
     setSelections((prev) => {
-      // Preserve any already-selected non-search items
-      const merged: Record<string, Selection> = { ...seeded };
-      Object.values(prev).forEach((s) => {
-        if (!s.fromSearch && !merged[s.label]) merged[s.label] = s;
+      const next = new Map<string, Selection>();
+      parse.forEach((d) => {
+        next.set(d.label, {
+          label: d.label,
+          mustHave: true,
+          fromSearch: true,
+        });
       });
-      return merged;
+      prev.forEach((s, label) => {
+        if (!s.fromSearch && !next.has(label)) next.set(label, s);
+      });
+      return next;
     });
   }, [open, parse]);
 
@@ -61,48 +65,42 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
     }
   }, [open]);
 
-  // Sort: must-haves first, then nice-to-haves; within each group,
-  // search-bar items first. Computed every render (hooks must run before
-  // any early return).
-  const sortedSelections = useMemo(() => {
-    return Object.values(selections).sort((a, b) => {
-      if (a.mustHave !== b.mustHave) return a.mustHave ? -1 : 1;
-      if (a.fromSearch !== b.fromSearch) return a.fromSearch ? -1 : 1;
-      return a.label.localeCompare(b.label);
-    });
-  }, [selections]);
-
   if (!open || typeof window === "undefined") return null;
 
   const toggleSelect = (label: string) => {
-    setSelections((s) => {
-      const next = { ...s };
-      if (next[label]) {
-        delete next[label];
+    setSelections((prev) => {
+      const next = new Map(prev);
+      if (next.has(label)) {
+        next.delete(label);
       } else {
-        // Newly selected non-search items default to must-have = false
-        next[label] = { label, mustHave: false, fromSearch: false };
+        // Newly selected items go to the end of the list with must-have OFF
+        next.set(label, { label, mustHave: false, fromSearch: false });
       }
       return next;
     });
   };
 
   const setMustHave = (label: string, mustHave: boolean) => {
-    setSelections((s) => ({
-      ...s,
-      [label]: { ...s[label], mustHave },
-    }));
-  };
-
-  const removeSelection = (label: string) => {
-    setSelections((s) => {
-      const next = { ...s };
-      delete next[label];
+    setSelections((prev) => {
+      const next = new Map(prev);
+      const cur = next.get(label);
+      if (cur) next.set(label, { ...cur, mustHave });
       return next;
     });
   };
 
-  const clearAll = () => setSelections({});
+  const removeSelection = (label: string) => {
+    setSelections((prev) => {
+      const next = new Map(prev);
+      next.delete(label);
+      return next;
+    });
+  };
+
+  const clearAll = () => setSelections(new Map());
+
+  // No sort — preserves insertion order so toggling never reshuffles rows.
+  const selectionList = Array.from(selections.values());
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-background flex flex-col sheet-backdrop-enter">
@@ -129,9 +127,9 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
             Must-haves rule places out. Nice-to-haves boost ranking but
             won&rsquo;t filter results.
           </p>
-          {sortedSelections.length > 0 ? (
+          {selectionList.length > 0 ? (
             <div className="mt-3 space-y-2">
-              {sortedSelections.map((s) => (
+              {selectionList.map((s) => (
                 <SelectionRow
                   key={s.label}
                   selection={s}
@@ -153,7 +151,7 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
         <ExpandableList
           title="Unit features"
           items={UNIT_FEATURES}
-          isSelected={(l) => !!selections[l]}
+          isSelected={(l) => selections.has(l)}
           onToggle={toggleSelect}
           expanded={unitExpanded}
           onExpandToggle={() => setUnitExpanded((v) => !v)}
@@ -165,7 +163,7 @@ export function FilterSheet({ open, onClose, matchingCount }: Props) {
         <ExpandableList
           title="Community amenities"
           items={COMMUNITY_AMENITIES}
-          isSelected={(l) => !!selections[l]}
+          isSelected={(l) => selections.has(l)}
           onToggle={toggleSelect}
           expanded={amenitiesExpanded}
           onExpandToggle={() => setAmenitiesExpanded((v) => !v)}
