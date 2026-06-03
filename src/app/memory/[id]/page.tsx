@@ -19,7 +19,6 @@ export default function MemoryPage({
   const unit = getUnit(id);
   const captures = useStore((s) => s.captures[id] ?? {});
   const parse = useStore((s) => s.parse);
-  const showerVerified = useStore((s) => s.showerVerified);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -47,18 +46,15 @@ export default function MemoryPage({
   if (!unit) return notFound();
   if (!mounted) return null;
 
-  // Derive handled list from user's confirmed must-haves (matches the tour page)
+  // Match the tour-page logic: verify items are resolved by tour time too.
   const handled = parse
-    .filter(
-      (d) =>
-        d.status === "confirmed" || (d.id === "shower" && showerVerified)
-    )
+    .filter((d) => d.status === "confirmed" || d.status === "verify")
     .map((d) => ({
       id: `handled-${d.id}`,
       label: d.label,
       preResolved:
-        d.id === "shower" && showerVerified
-          ? "Confirmed by Maple Hill mgmt"
+        d.status === "verify"
+          ? `Confirmed by ${unit.name} mgmt`
           : "Confirmed from listing",
     }));
   const yours = MAPLE_HILL_CHECKLIST.filter((c) => c.group === "yours");

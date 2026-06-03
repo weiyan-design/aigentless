@@ -18,7 +18,7 @@ export default function TourPage({
   const { id } = use(params);
   const router = useRouter();
   const unit = getUnit(id);
-  const { captures, capture, resetCaptures, parse, showerVerified } = useStore();
+  const { captures, capture, resetCaptures, parse } = useStore();
   const [mounted, setMounted] = useState(false);
   const [started, setStarted] = useState(false);
 
@@ -31,20 +31,17 @@ export default function TourPage({
   if (!mounted) return null;
 
   const checklist = MAPLE_HILL_CHECKLIST;
-  // Derive 'handled' from the user's actual must-haves so all checked-out
-  // items show here, not just the walk-in shower.
+  // By tour time, both 'confirmed from listing' items and 'verify before
+  // tour' items have been resolved. Both belong in 'Handled before your
+  // tour' — only the source line differs.
   const handled: HandledItem[] = parse
-    .filter(
-      (d) =>
-        d.status === "confirmed" ||
-        (d.id === "shower" && showerVerified)
-    )
+    .filter((d) => d.status === "confirmed" || d.status === "verify")
     .map((d) => ({
       id: `handled-${d.id}`,
       label: d.label,
       preResolved:
-        d.id === "shower" && showerVerified
-          ? "Confirmed by Maple Hill mgmt"
+        d.status === "verify"
+          ? `Confirmed by ${unit.name} mgmt`
           : "Confirmed from listing",
     }));
   const yours = checklist.filter((c) => c.group === "yours");
