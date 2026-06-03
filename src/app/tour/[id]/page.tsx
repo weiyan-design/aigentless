@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useStore, type CaptureValue } from "@/lib/store";
 import { getUnit, MAPLE_HILL_CHECKLIST, DEMO_CAPTURE_FALLBACK } from "@/lib/fixtures";
 
+type HandledItem = { id: string; label: string; preResolved: string };
+
 export default function TourPage({
   params,
 }: {
@@ -16,7 +18,7 @@ export default function TourPage({
   const { id } = use(params);
   const router = useRouter();
   const unit = getUnit(id);
-  const { captures, capture, resetCaptures } = useStore();
+  const { captures, capture, resetCaptures, parse, showerVerified } = useStore();
   const [mounted, setMounted] = useState(false);
   const [started, setStarted] = useState(false);
 
@@ -29,7 +31,22 @@ export default function TourPage({
   if (!mounted) return null;
 
   const checklist = MAPLE_HILL_CHECKLIST;
-  const handled = checklist.filter((c) => c.group === "handled");
+  // Derive 'handled' from the user's actual must-haves so all checked-out
+  // items show here, not just the walk-in shower.
+  const handled: HandledItem[] = parse
+    .filter(
+      (d) =>
+        d.status === "confirmed" ||
+        (d.id === "shower" && showerVerified)
+    )
+    .map((d) => ({
+      id: `handled-${d.id}`,
+      label: d.label,
+      preResolved:
+        d.id === "shower" && showerVerified
+          ? "Confirmed by Maple Hill mgmt"
+          : "Confirmed from listing",
+    }));
   const yours = checklist.filter((c) => c.group === "yours");
   const recommended = checklist.filter((c) => c.group === "recommended");
   const interactiveItems = [...yours, ...recommended];
