@@ -130,21 +130,20 @@ export default function TourPage({
             <Check size={12} strokeWidth={2.25} />
             <span>Handled before your tour</span>
           </div>
-          {handled.map((item) => (
-            <div key={item.id} className="flex items-start gap-3 py-2">
-              <span className="w-6 h-6 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center">
-                <Check size={12} strokeWidth={2.25} />
-              </span>
-              <div>
-                <div className="text-[15px] font-medium">{item.label}</div>
-                {item.preResolved && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {item.preResolved}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="space-y-2">
+            {handled.map((item) => (
+              <HandledRow
+                key={item.id}
+                label={item.label}
+                source={item.preResolved}
+                note={unitCaptures[item.id]?.note}
+                interactive={started}
+                onSaveNote={(note) =>
+                  onCapture(item.id, { rating: "up", note: note || undefined })
+                }
+              />
+            ))}
+          </div>
         </section>
       )}
 
@@ -210,6 +209,74 @@ export default function TourPage({
         </div>
       )}
     </main>
+  );
+}
+
+function HandledRow({
+  label,
+  source,
+  note,
+  interactive,
+  onSaveNote,
+}: {
+  label: string;
+  source: string;
+  note?: string;
+  interactive: boolean;
+  onSaveNote: (note: string) => void;
+}) {
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [draft, setDraft] = useState(note ?? "");
+
+  useEffect(() => {
+    setDraft(note ?? "");
+  }, [note]);
+
+  return (
+    <div className="flex items-start gap-3 py-1">
+      <span className="w-6 h-6 shrink-0 rounded-full bg-success/40 text-success-foreground flex items-center justify-center mt-0.5">
+        <Check size={12} strokeWidth={2.25} />
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[15px] font-medium flex-1">{label}</span>
+          {interactive && !noteOpen && (
+            <button
+              onClick={() => setNoteOpen(true)}
+              className="text-xs text-foreground/70 underline underline-offset-2 inline-flex items-center gap-0.5"
+            >
+              <Plus size={11} strokeWidth={2} /> {note ? "edit note" : "note"}
+            </button>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">{source}</div>
+        {note && !noteOpen && (
+          <div className="mt-1 text-xs text-muted-foreground italic">
+            “{note}”
+          </div>
+        )}
+        {noteOpen && (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onSaveNote(draft.trim());
+              setNoteOpen(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              if (e.key === "Escape") {
+                setDraft(note ?? "");
+                setNoteOpen(false);
+              }
+            }}
+            placeholder="One-line note"
+            className="mt-2 w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
