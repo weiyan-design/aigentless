@@ -39,7 +39,6 @@ import { Button } from "@/components/ui/button";
 import { EmailSheet } from "@/components/email-sheet";
 import { useStore, type CaptureValue } from "@/lib/store";
 import { useToast } from "@/components/toast";
-import { DEALBREAKER_ICONS } from "@/lib/icons";
 import { getUnit, type Dealbreaker } from "@/lib/fixtures";
 
 const OTHER_CAROUSEL_IMAGES = [
@@ -155,13 +154,14 @@ export default function UnitDetailPage({
     setTimeout(() => verifyShower(), 3800);
   };
 
-  // Sort parse so anything needing action comes first
-  const sortedParse: (Dealbreaker & { needsVerify?: boolean })[] = [
-    ...parse
-      .filter((d) => d.id === "shower" && showerStatus !== "confirmed")
-      .map((d) => ({ ...d, needsVerify: true })),
-    ...parse.filter((d) => !(d.id === "shower" && showerStatus !== "confirmed")),
-  ];
+  // Preserve parse order (pet, laundry, shower, light, quiet) — flag
+  // the shower row when it still needs the agent verification.
+  const sortedParse: (Dealbreaker & { needsVerify?: boolean })[] = parse.map(
+    (d) =>
+      d.id === "shower" && showerStatus !== "confirmed"
+        ? { ...d, needsVerify: true }
+        : d
+  );
 
   return (
     <main className="min-h-dvh pb-32">
@@ -397,12 +397,7 @@ function SummaryContent({
           {parse.map((d) => {
             if (d.needsVerify) {
               return (
-                <VerifyChip
-                  key={d.id}
-                  label={d.label}
-                  Icon={DEALBREAKER_ICONS[d.id]}
-                  onClick={onVerify}
-                />
+                <VerifyChip key={d.id} label={d.label} onClick={onVerify} />
               );
             }
             if (d.status === "confirmed") {
@@ -410,19 +405,12 @@ function SummaryContent({
                 <ConfirmedChip
                   key={d.id}
                   label={d.label}
-                  Icon={DEALBREAKER_ICONS[d.id]}
                   resolvedNow={d.id === "shower" && showerStatus === "verified"}
                 />
               );
             }
             // inperson — neutral chip
-            return (
-              <InPersonChip
-                key={d.id}
-                label={d.label}
-                Icon={DEALBREAKER_ICONS[d.id]}
-              />
-            );
+            return <InPersonChip key={d.id} label={d.label} />;
           })}
         </div>
       </div>
@@ -601,11 +589,9 @@ const CHIP_BASE =
 
 function VerifyChip({
   label,
-  Icon,
   onClick,
 }: {
   label: string;
-  Icon?: LucideIcon;
   onClick: () => void;
 }) {
   return (
@@ -613,7 +599,7 @@ function VerifyChip({
       onClick={onClick}
       className={`${CHIP_BASE} bg-warn/40 border border-warn text-warn-foreground pl-3 pr-1 hover:bg-warn/60 transition-colors`}
     >
-      {Icon && <Icon size={13} strokeWidth={1.75} />}
+      <Info size={12} strokeWidth={2.25} />
       <span className="font-medium">{label}</span>
       <span className="w-7 h-7 rounded-full bg-warn-foreground text-warn flex items-center justify-center ml-1">
         <Mail size={13} strokeWidth={1.75} />
@@ -624,11 +610,9 @@ function VerifyChip({
 
 function ConfirmedChip({
   label,
-  Icon,
   resolvedNow,
 }: {
   label: string;
-  Icon?: LucideIcon;
   resolvedNow?: boolean;
 }) {
   return (
@@ -638,13 +622,12 @@ function ConfirmedChip({
       }`}
     >
       <Check size={12} strokeWidth={2.25} />
-      {Icon && <Icon size={13} strokeWidth={1.75} />}
       <span>{label}</span>
     </span>
   );
 }
 
-function InPersonChip({ label, Icon }: { label: string; Icon?: LucideIcon }) {
+function InPersonChip({ label }: { label: string }) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
 
@@ -687,9 +670,8 @@ function InPersonChip({ label, Icon }: { label: string; Icon?: LucideIcon }) {
         className={`${CHIP_BASE} bg-accent/40 text-accent-foreground px-3 hover:bg-accent/60 transition-colors`}
         aria-label={`${label} — check in person`}
       >
-        {Icon && <Icon size={13} strokeWidth={1.75} />}
+        <Info size={12} strokeWidth={2.25} />
         <span>{label}</span>
-        <Info size={12} strokeWidth={2} />
       </button>
       {tipPos &&
         typeof window !== "undefined" &&
