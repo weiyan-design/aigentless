@@ -95,6 +95,26 @@ export default function TourPage({
             <p className="text-sm text-muted-foreground mt-1">
               {capturedCount} of {interactiveItems.length} captured · tap to edit
             </p>
+            {parse.length > 0 && (
+              <div className="mt-4">
+                <div className="smallcaps text-muted-foreground mb-2">
+                  Your must-haves
+                </div>
+                <div
+                  className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {parse.map((d) => (
+                    <span
+                      key={d.id}
+                      className="shrink-0 inline-flex items-center h-9 rounded-full px-3.5 text-[13px] bg-success/30 text-success-foreground"
+                    >
+                      {d.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         ) : !started ? (
           <>
