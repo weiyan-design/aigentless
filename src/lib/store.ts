@@ -25,8 +25,11 @@ type AigentlessState = {
   // Tour captures: { [unitId]: { [itemId]: CaptureValue } }
   captures: Record<string, Record<string, CaptureValue>>;
 
-  // Past tours logged from the memory screen — ordered most recent first
-  pastTours: { unitId: string; toured: number }[];
+  // Past tours logged from the memory screen — ordered most recent first.
+  // Each entry snapshots the parse at log time so the past-tour view can
+  // still reconstruct the 'Handled before your tour' section even after
+  // the live parse is cleared by a new search.
+  pastTours: { unitId: string; toured: number; parse: Dealbreaker[] }[];
 
   // Actions
   setLayer1: (p: Partial<{ location: string; budget: number; budgetMin: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
@@ -50,7 +53,7 @@ const initial = {
   parse: [] as Dealbreaker[],
   showerVerified: false,
   captures: {} as Record<string, Record<string, CaptureValue>>,
-  pastTours: [] as { unitId: string; toured: number }[],
+  pastTours: [] as { unitId: string; toured: number; parse: Dealbreaker[] }[],
 };
 
 export const useStore = create<AigentlessState>()(
@@ -84,7 +87,10 @@ export const useStore = create<AigentlessState>()(
         set((s) => {
           const filtered = s.pastTours.filter((t) => t.unitId !== unitId);
           return {
-            pastTours: [{ unitId, toured: Date.now() }, ...filtered],
+            pastTours: [
+              { unitId, toured: Date.now(), parse: s.parse },
+              ...filtered,
+            ],
           };
         }),
       resetAll: () =>

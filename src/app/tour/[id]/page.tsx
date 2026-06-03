@@ -20,7 +20,7 @@ export default function TourPage({
   const searchParams = useSearchParams();
   const isPastView = searchParams.get("past") === "1";
   const unit = getUnit(id);
-  const { captures, capture, resetCaptures, parse } = useStore();
+  const { captures, capture, resetCaptures, parse, pastTours } = useStore();
   const [mounted, setMounted] = useState(false);
   // Past-view skips the "I'm here — start" gate and shows results as-is.
   const [started, setStarted] = useState(isPastView);
@@ -35,10 +35,15 @@ export default function TourPage({
   if (!mounted) return null;
 
   const checklist = MAPLE_HILL_CHECKLIST;
+  // In past-view, use the parse snapshot stored alongside the past tour
+  // (since the live parse may have been cleared by a later search).
+  const sourceParse = isPastView
+    ? pastTours.find((t) => t.unitId === id)?.parse ?? parse
+    : parse;
   // By tour time, both 'confirmed from listing' items and 'verify before
   // tour' items have been resolved. Both belong in 'Handled before your
   // tour' — only the source line differs.
-  const handled: HandledItem[] = parse
+  const handled: HandledItem[] = sourceParse
     .filter((d) => d.status === "confirmed" || d.status === "verify")
     .map((d) => ({
       id: `handled-${d.id}`,
