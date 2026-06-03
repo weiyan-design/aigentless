@@ -19,6 +19,7 @@ export default function MemoryPage({
   const unit = getUnit(id);
   const captures = useStore((s) => s.captures[id] ?? {});
   const parse = useStore((s) => s.parse);
+  const logTour = useStore((s) => s.logTour);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -153,17 +154,20 @@ export default function MemoryPage({
       {/* CTAs */}
       <div className="px-5 mt-8 space-y-2">
         <Button
-          onClick={() => router.push(`/results`)}
+          onClick={() => {
+            logTour(id);
+            router.push("/");
+          }}
           className="w-full h-12 text-base rounded-full"
         >
-          Back to results
+          Log to my tours
         </Button>
         <Button
           variant="ghost"
-          onClick={() => {}}
+          onClick={() => router.push("/results")}
           className="w-full h-12 text-base rounded-full"
         >
-          Compare tours
+          Back to results
         </Button>
       </div>
     </main>

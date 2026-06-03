@@ -25,6 +25,9 @@ type AigentlessState = {
   // Tour captures: { [unitId]: { [itemId]: CaptureValue } }
   captures: Record<string, Record<string, CaptureValue>>;
 
+  // Past tours logged from the memory screen — ordered most recent first
+  pastTours: { unitId: string; toured: number }[];
+
   // Actions
   setLayer1: (p: Partial<{ location: string; budget: number; budgetMin: number; bedrooms: number; bathrooms: number; moveIn: string }>) => void;
   setDealbreaker: (text: string) => void;
@@ -32,6 +35,7 @@ type AigentlessState = {
   verifyShower: () => void;
   capture: (unitId: string, itemId: string, value: CaptureValue) => void;
   resetCaptures: (unitId: string) => void;
+  logTour: (unitId: string) => void;
   resetAll: () => void;
 };
 
@@ -46,6 +50,7 @@ const initial = {
   parse: [] as Dealbreaker[],
   showerVerified: false,
   captures: {} as Record<string, Record<string, CaptureValue>>,
+  pastTours: [] as { unitId: string; toured: number }[],
 };
 
 export const useStore = create<AigentlessState>()(
@@ -75,7 +80,16 @@ export const useStore = create<AigentlessState>()(
           delete next[unitId];
           return { captures: next };
         }),
-      resetAll: () => set({ ...initial }),
+      logTour: (unitId) =>
+        set((s) => {
+          const filtered = s.pastTours.filter((t) => t.unitId !== unitId);
+          return {
+            pastTours: [{ unitId, toured: Date.now() }, ...filtered],
+          };
+        }),
+      resetAll: () =>
+        // Preserve pastTours across resets so the home page keeps the log
+        set((s) => ({ ...initial, pastTours: s.pastTours })),
     }),
     {
       name: "aigentless-demo",

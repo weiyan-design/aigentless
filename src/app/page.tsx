@@ -11,10 +11,11 @@ import {
   Square,
   ArrowUpDown,
 } from "lucide-react";
+import Link from "next/link";
 import { SearchModal } from "@/components/search-modal";
 import { SortSheet, SORT_LABELS, type SortOption } from "@/components/sort-sheet";
 import { useStore } from "@/lib/store";
-import { UNITS, type Unit } from "@/lib/fixtures";
+import { UNITS, getUnit, type Unit } from "@/lib/fixtures";
 
 // Discovery listings on the home view — units NOT in the demo result set
 // so the demo flow stays clean.
@@ -22,7 +23,7 @@ const DISCOVERY_IDS = ["audley-studio", "post-chicago", "ascent-homes"];
 
 export default function HomePage() {
   const router = useRouter();
-  const { resetAll } = useStore();
+  const { resetAll, pastTours } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<SortOption>("distance");
@@ -34,6 +35,10 @@ export default function HomePage() {
   }, [resetAll]);
 
   if (!mounted) return null;
+
+  const pastTourUnits = pastTours
+    .map((t) => ({ unit: getUnit(t.unitId), toured: t.toured }))
+    .filter((t): t is { unit: Unit; toured: number } => Boolean(t.unit));
 
   const discoveryUnits = DISCOVERY_IDS.map(
     (id) => UNITS.find((u) => u.id === id)!
@@ -59,6 +64,43 @@ export default function HomePage() {
           </span>
         </button>
       </div>
+
+      {/* Past tours */}
+      {pastTourUnits.length > 0 && (
+        <div className="px-5 mt-7">
+          <div className="smallcaps text-muted-foreground mb-3">Your tours</div>
+          <div
+            className="flex gap-3 overflow-x-auto -mx-5 px-5 pb-1 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {pastTourUnits.map(({ unit, toured }) => (
+              <Link
+                key={unit.id}
+                href={`/memory/${unit.id}`}
+                className="shrink-0 w-44 bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.99] transition-transform"
+              >
+                <img
+                  src={unit.coverImage}
+                  alt={unit.name}
+                  className="w-full h-24 object-cover bg-secondary"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${unit.id}/440/240`;
+                  }}
+                />
+                <div className="p-3">
+                  <h3 className="font-serif text-[16px] leading-tight truncate">
+                    {unit.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Toured {relativeTime(toured)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Discovery listings */}
       <div className="px-5 mt-7">
@@ -108,6 +150,22 @@ export default function HomePage() {
       />
     </main>
   );
+}
+
+function relativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const day = Math.floor(hr / 24);
+  if (day === 1) return "yesterday";
+  if (day < 7) return `${day} days ago`;
+  const wk = Math.floor(day / 7);
+  if (wk < 4) return `${wk} wk ago`;
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function ListingCard({ unit }: { unit: Unit }) {
